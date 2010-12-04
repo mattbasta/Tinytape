@@ -1,0 +1,115 @@
+
+
+#notifications {
+	font-size:0.9em;
+	text-align:left;
+}
+#notifications .notification {
+	width:275px;
+	border-bottom:1px solid #ccc;
+	margin-bottom:1em;
+}
+#notifications .notification .closenotification {
+	height:16px;
+	width:16px;
+	display:block;
+	background:url(/images/delete.png) no-repeat center center;
+	position:absolute;
+	top:5px;
+	right:5px;
+}
+.notification .songinfo {
+	font-size:1.4em;
+	line-height:1.25em;
+	padding:0 0 1em;
+}
+.notification .songinfo .albumart {float:left;}
+.notification .songinfo .title {font-weight:bold;}
+
+#controls {
+	position:fixed;
+	bottom:10px;
+	right:10px;
+	background:#fff;
+	box-shadow:0 0 3px #ccc;
+	-moz-box-shadow:0 0 3px #ccc;
+	-webkit-box-shadow:0 0 3px #ccc;
+	border:1px solid #aaa;
+	border-radius:5px;
+	-moz-border-radius:5px;
+	padding:7px 15px;
+	z-index:10000;
+}
+
+.badge_large {
+	border:10px dotted #ccc;
+	border-radius:20px;
+	-moz-border-radius:20px;
+	padding:10px;
+}
+
+#whoawhoawhoa {
+	text-align:center;
+	padding:50px 20%;
+	font-size:1.2em;
+}
+
+
+
+.my_tapelist {
+	list-style:none;
+	padding:0;
+	width:380px;
+}
+.my_tapelist li {
+	width:180px;
+	margin:0 5px 3px 5px;
+	padding:0;
+	border-radius:3px;
+	-moz-border-radius:3px;
+	float:left;
+	line-height:1.2em;
+}
+.my_tapelist li a {
+	display:block;
+	text-decoration:none;
+	color:#fff;
+	font-weight:bold;
+	padding:4px;
+	text-shadow:0 0 2px #000;
+}
+.my_tapelist li a:hover {
+	background:rgba(255,255,255,0.2);
+}
+.scrollablefancy {
+	height:375px;
+	overflow:auto;
+	width:400px;
+}
+
+#ajaxnewtape {text-align:left;}
+#ajaxnewtape hgroup h1 {
+	font-size:1.2em;
+	font-weight:bold;
+	margin-bottom:0.75em;
+}
+
+#tape_added {
+	padding:2em;
+	font-size:1.3em;
+	line-height:1.5em;
+}
+
+#new_tape {
+	display:block;
+	background:#f9f9f9;
+	border:1px solid #999;
+	box-shadow:0 0 4px #CCCCCC;
+	-moz-box-shadow:0 0 4px #CCCCCC;
+	-webkit-box-shadow:0 0 4px #CCCCCC;
+	padding:0.75em 1em;
+	text-align:center;
+	font-size:1.25em;
+}
+#new_tape:hover {background:#fff;}
+#new_tape:active {background:#eee;}

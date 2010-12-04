@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /api/
+Disallow: /admin/
+Disallow: /account
+Allow: /
+
+Sitemap: http://tinytape.com/sitemap

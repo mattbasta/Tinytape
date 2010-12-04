@@ -1,0 +1,2 @@
+<img src="/images/badges/<?php echo urlencode(view_manager::get_value("IMAGE"));?>.jpg" alt="<?php echo htmlentities(view_manager::get_value("TITLE"));?>" />
+<p><?php echo htmlentities(view_manager::get_value("DESCRIPTION"));?></p>

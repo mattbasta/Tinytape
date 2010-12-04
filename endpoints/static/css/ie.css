@@ -1,0 +1,10 @@
+section.dialog .buttons {line-height:44px;padding:0 !important;}
+section.dialog .button {padding:0 0 0 10px !important;}
+nav .selected a {
+	width:220px !important;
+	position:relative;
+}
+section.dialog input {
+	width:240px !important;
+	padding:11px 10px 10px !important;
+}

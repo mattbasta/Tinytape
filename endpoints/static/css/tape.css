@@ -1,0 +1,125 @@
+#container {
+	width:auto;
+}
+body {
+	font-size:75%;
+}
+header h1 {
+	color:#FFFFFF;
+	display:block;
+	float:left;
+	font-size:2em;
+	line-height:1em;
+	margin:0;
+	padding:0.48em 0.7em;
+}
+header .hcont,
+header .hcont a {
+	color:#fff;
+}
+header .hcont {
+	background:#000;
+	font-size:1em;
+	line-height:1em;
+	padding:1.48em 0.7em;
+	text-align:right;
+}
+
+footer {
+	color:#888;
+	padding:1.5em 0;
+	text-align:center;
+}
+
+#searchlist {
+	list-style:none;
+	padding:0.2em 0 0;
+}
+#searchlist li {
+	background:#F9F9F9;
+	color:#666;
+	font-size:2em;
+	letter-spacing:-1px;
+	margin-bottom:2px;
+	position:relative;
+	line-height:2.5em;
+}
+#searchlist li:hover {background:#eee;}
+#searchlist li * {
+	position:relative;
+	z-index:2;
+}
+#searchlist li a {
+	display:block;
+	text-decoration:none;
+}
+#searchlist li a.playblock {
+	color:#000000;
+	display:block;
+	font-size:200%;
+	font-weight:normal;
+	outline:medium none;
+	padding:0.25em;
+	position:relative;
+	text-decoration:none;
+	text-shadow:0 0 0 #FFFFFF;
+	z-index:3;
+}
+#searchlist li strong {
+	font-weight:normal;
+}
+
+#searchlist li a.instances {
+	display:none;
+	z-index:3;
+}
+#searchlist li.playing a.instances,
+#searchlist li:hover a.instances {
+	display:block;
+	float:right;
+	padding:0 10px;
+	border-radius:3px;
+	-moz-border-radius:3px;
+	background:#eee;
+	text-decoration:underline;
+}
+#searchlist li a.instances:hover {
+	background:#ddd;
+}
+
+#searchlist .hardware,
+#searchlist .playbar {
+	display:none;
+	position:absolute;
+	top:0;
+	left:0;
+	height:100%;
+	width:0;
+}
+#searchlist .hardware {z-index:0;background:#f2f2f2;}
+#searchlist .playbar {z-index:1;background:#ddd;}
+#searchlist .playing .hardware,
+#searchlist .playing .playbar {display:block;}
+
+.types {display:none;}
+
+#searchlist li .embedcontrols {display:none;}
+#searchlist li.playing .embedcontrols {
+	display:block;
+	position:absolute;
+	bottom:0;
+	right:0;
+	line-height:1em;
+	padding:0.25em 0.5em;
+	letter-spacing:0;
+	font-size:0.75em;
+	z-index:10;
+}
+#searchlist li .embedcontrols a {
+	display:inline;
+	color:#aaa;
+	padding-left:10px;
+}
+#searchlist li .embedcontrols a:hover {
+	text-decoration:underline;
+}
