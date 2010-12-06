@@ -31,4 +31,5 @@ $(document).ready(function() {
 			load_feed(username, hash, "#filter_" + hash);
 		}
 	}
+	$("#my_shoutbox").elastic();
 });
