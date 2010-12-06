@@ -23,9 +23,9 @@ $level = getLevel($score);
 	<script type="text/javascript" src="<?php echo URL_PREFIX; ?>activity.js"></script>
 	<section id="my_feed">
 		<?php
-		foreach(view_manager::get_value("NEWS_FEED") as $feed_item) {
+		/*foreach(view_manager::get_value("NEWS_FEED") as $feed_item) {
 			require(PATH_PREFIX . "/feed_item.php");
-		}
+		}*/
 		?>
 	</section>
 </div>

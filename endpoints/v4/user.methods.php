@@ -55,7 +55,7 @@ class methods {
 		
 		view_manager::set_value("SCORE", (int)$r->zScore("tinytape_scores", $username));
 		view_manager::set_value("BADGES", $r->sMembers("tinytape_badges_" . $username));
-		view_manager::set_value("NEWS_FEED", $r->lGetRange("tinytape_feed_$username", 0, 25));
+		//view_manager::set_value("NEWS_FEED", $r->lGetRange("tinytape_feed_$username", 0, 25));
 		view_manager::set_value("FOLLOWING_USERS", $following_users);
 		//view_manager::set_value("MUTUALLY_FOLLOWING", $r->sInter());
 		view_manager::set_value("TTBADGES", $tt_badges);
