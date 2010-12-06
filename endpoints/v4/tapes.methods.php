@@ -62,6 +62,7 @@ class methods {
 		if(strlen($title) < 3 ||
 		   strlen($color) != 6 ||
 		   strlen($tape) < 2 ||
+		   strlen($tape) > 64 ||
 		   count($color_matches) != 1 ||
 		   count($url_matches) != 1) {
 			header("Location: " . URL_PREFIX . "tapes/new?invalid=badvalue");
