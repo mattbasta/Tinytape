@@ -984,3 +984,20 @@ jquery.autocomplete.css
 	line-height:1.2em;
 	margin:0;
 }
+
+.feed_item .fi_delete {
+	border-radius:2px;
+	-moz-border-radius:2px;
+	color:#333;
+	display:none;
+	float:right;
+	border:1px solid #aaa;
+	padding:0.2em;
+	text-decoration:none;
+	background: #EDEDED; /* old browsers */
+	background: -moz-linear-gradient(top, #EDEDED 0%, #CECECE 100%); /* firefox */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#EDEDED), color-stop(100%,#CECECE)); /* webkit */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#EDEDED', endColorstr='#CECECE',GradientType=0 ); /* ie */
+}
+.feed_item:hover .fi_delete {display:block;}
+.feed_item:hover .fi_delete:hover {color:#000;}

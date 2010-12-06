@@ -60,6 +60,8 @@ class methods {
 		//view_manager::set_value("MUTUALLY_FOLLOWING", $r->sInter());
 		view_manager::set_value("TTBADGES", $tt_badges);
 		view_manager::set_value("USERNAME", $username);
+		view_manager::set_value("FEED_USERNAME", $username);
+		view_manager::set_value("FEED_TYPE", "feed");
 		view_manager::set_value("FOLLOWING", $r->sContains("tinytape_following_$username", $session->username));
 		view_manager::set_value("MORE_TAPES", count($tapes) == 10);
 		

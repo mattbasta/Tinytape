@@ -18,6 +18,9 @@ class methods {
 					return false;
 		}
 		
+		view_manager::set_value("FEED_USERNAME", $username);
+		view_manager::set_value("FEED_TYPE", $type);
+		
 		$json_data = false;
 		$payload = "";
 		ob_start();
@@ -41,8 +44,16 @@ class methods {
 			case "mentions":
 			case "followeefeed":
 				$items = $r->lGetRange("tinytape_{$type}_$username", 0, 25);
-				foreach($items as $feed_item)
-					require(PATH_PREFIX . "/feed_item.php");
+				if($items) {
+					foreach($items as $feed_item)
+						require(PATH_PREFIX . "/feed_item.php");
+				} else {
+					?>
+					<div id="feed_empty">
+						There are no items to display.
+					</div>
+					<?php
+				}
 				break;
 				
 			case "searchhistory":
@@ -51,8 +62,10 @@ class methods {
 				$items = $r->lGetRange("tinytape_searchhistory_$username", 0, 50);
 				
 				foreach($items as $item) {
+					$item_hash = md5($item);
 				?>
 				<div class="feed_item searchhistory">
+					<a class="fi_delete" href="#" onclick="return delete_post('<?php echo addslashes(htmlentities($username)); ?>', 'searchhistory', '<?php echo $item_hash; ?>');">Delete</a>
 					<a href="<?php echo URL_PREFIX; ?>search?q=<?php echo urlencode($item); ?>"><?php echo htmlentities($item); ?></a>
 				</div>
 				<?php
@@ -136,6 +149,48 @@ class methods {
 		return new JSONResponse(array(
 			"payload"=>$payload,
 			"register"=>$json_data
+		));
+	}
+	
+	public function delete_item($username, $type, $hash) {
+		global $session, $r, $db;
+		
+		if(!user_exists($username) || !$session->logged_in || strlen($hash) != 32)
+			return false;
+		
+		if($session->username != $username && !$session->admin)
+			return false;
+		
+		$key = "tinytape_{$type}_$username";
+		
+		switch($type) {
+			case "fullfeed":
+			case "feed":
+			case "mentions":
+			case "followeefeed":
+			case "searchhistory":
+			case "history":
+				
+				for($i=0;$i<1000;$i++) { // This might be increasable
+					$item = $r->lGet($key, $i);
+					if($item === false)
+						break;
+					if(md5($item) != $hash)
+						continue;
+					$rem = $r->lRemove($key, $item, 1);
+					return new JSONResponse(array(
+						"deleted"=>true,
+						"badge"=>false
+					));
+					
+				}
+				
+				break;
+				
+		}
+		
+		return new JSONResponse(array(
+			"badge"=>false
 		));
 	}
 	

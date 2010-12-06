@@ -66,6 +66,8 @@ class methods {
 		view_manager::set_value("FOLLOWING_USERS", $following_users);
 		view_manager::set_value("TTBADGES", $tt_badges);
 		view_manager::set_value("USERNAME", $username);
+		view_manager::set_value("FEED_USERNAME", $username);
+		view_manager::set_value("FEED_TYPE", "fullfeed");
 		view_manager::set_value("MORE_TAPES", count($tapes) == 10);
 		
 		return view_manager::render_as_httpresponse();

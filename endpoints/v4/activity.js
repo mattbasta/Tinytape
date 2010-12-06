@@ -1,7 +1,7 @@
 function load_feed(username, type, t) {
 	$("#feedchooser a").removeClass("active");
 	$.getJSON(
-		"/v4/api/feed/get_feed/" + escape(username) + "/" + type,
+		"/api/feed/get_feed/" + escape(username) + "/" + type,
 		function(data) {
 			$("#my_feed").html(data.payload);
 			if(data.register)
@@ -13,7 +13,7 @@ function load_feed(username, type, t) {
 
 function clear_history(history) {
 	$.get(
-		"/v4/api/feed/empty/" + history,
+		"/api/feed/empty/" + history,
 		function(data) {
 			load_feed(username, history, "#filter_" + history);
 		}
@@ -33,3 +33,21 @@ $(document).ready(function() {
 	}
 	$("#my_shoutbox").elastic();
 });
+
+function delete_post(username, type, hash) {
+	$.getJSON(
+		"/api/feed/delete_item/" + escape(username) + "/" + type + "/" + hash,
+		function(data) {
+			var h = $("#fi_" + hash);
+			if(data.badge)
+				badge(data.badge);
+			if("deleted" in data) {
+				h.slideUp(300, function() {
+					h.remove();
+				});
+			}
+		}
+	);
+	
+	return false;
+}

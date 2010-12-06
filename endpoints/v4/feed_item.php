@@ -1,8 +1,17 @@
 <?php
 
+$feed_hash = md5($feed_item);
 $fi = json_decode($feed_item, true);
 ?>
-<div class="feed_item <?php echo $fi["type"]; ?>">
+<div id="fi_<?php echo $feed_hash; ?>" class="feed_item <?php echo $fi["type"]; ?>">
+	<?php
+	$feed_username = view_manager::get_value('FEED_USERNAME');
+	if($feed_username == $session->username || $session->admin) {
+	?>
+	<a class="fi_delete" href="#" onclick="return delete_post('<?php echo addslashes(htmlentities($feed_username)); ?>', '<?php echo view_manager::get_value('FEED_TYPE'); ?>', '<?php echo $feed_hash; ?>');">Delete</a>
+	<?php
+	}
+	?>
 	<a href="<?php echo URL_PREFIX; ?>user/<?php echo urlencode($fi["username"]); ?>" class="username"><?php echo htmlentities($fi["username"]); ?></a>
 <?php
 switch($fi["version"]) {
