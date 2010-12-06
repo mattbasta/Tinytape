@@ -1,5 +1,6 @@
 <?php
 
+define("SEARCH_PROVIDER", "sphinx");
 define("ENABLE_FACEBOOK", true);
 define("FB_ID", "192417860416");
 define("FB_SECRET", "364349eb3403b57d60520fa0b76a0e14");
@@ -80,6 +81,7 @@ function shout_process($text, $url_prefix="") {
 	if(empty($url_prefix))
 		$url_prefix = URL_PREFIX;
 	$text = htmlspecialchars($text);
+	$text = ereg_replace("[[:alpha:]]+://[^<>[:space:]]+[[:alnum:]/]","<a target=\"_blank\" href=\"\\0\">\\0</a>", $text);
 	$text = preg_replace('!(^|\W)@([a-z0-9_]+)!', ' @<a href="' . $url_prefix . 'user/$2">$2</a>', $text);
 	return $text;
 }

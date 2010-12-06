@@ -62,31 +62,13 @@
 			"library":"redis"
 		},
 		{
-			"type":"folder",
-			"folder":"v4",
-			"policies":[
-				{
-					"type":"lib",
-					"library":"v4_prefixes"
-				},
-				{
-					"type":"methods",
-					"endpoint":"v4"
-				}
-			]
+			"type":"lib",
+			"library":"sphinx"
 		},
 		{
 			"type":"folder",
 			"folder":"m",
 			"policies":[
-				{
-					"type":"lib",
-					"library":"badges"
-				},
-				{
-					"type":"lib",
-					"library":"redis"
-				},
 				{
 					"type":"lib",
 					"library":"mobile_prefixes"
@@ -100,6 +82,16 @@
 		{
 			"type":"lib",
 			"library":"v4_prefixes"
+		},
+		{
+			"type":"folder",
+			"folder":"v4",
+			"policies":[
+				{
+					"type":"methods",
+					"endpoint":"v4"
+				}
+			]
 		},
 		{
 			"type":"methods",

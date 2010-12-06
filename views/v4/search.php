@@ -25,19 +25,19 @@
 		$instance_id = 0;
 		$json_data = array();
 		foreach($results as $result) {
-			$uid = sha1($result->id . $tempsecret);
+			$uid = sha1($result['id'] . $tempsecret);
 			
-			$rtitle = $result->title;
-			$rartist = $result->artist;
-			$ralbum = $result->album;
+			$rtitle = $result['title'];
+			$rartist = $result['artist'];
+			$ralbum = $result['album'];
 			
-			$rid = $result->id;
+			$rid = $result['id'];
 			
 			require(PATH_PREFIX . '/result.php');
 			
 			$json_data[$uid] = array(
 				"service"=>"tinytape",
-				"resource"=>array("id"=>(int)$result->id),
+				"resource"=>array("id"=>(int)$result['id']),
 				"metadata"=>array(
 					"title"=>htmlentities($rtitle),
 					"artist"=>htmlentities($rartist),

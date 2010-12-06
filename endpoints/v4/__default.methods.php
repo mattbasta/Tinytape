@@ -124,7 +124,7 @@ class methods {
 	}
 	
 	public function search() {
-		global $session, $r, $db;
+		global $session, $r, $db, $sphinx;
 		
 		$term = strtolower(trim($_GET["q"]));
 		
@@ -133,32 +133,49 @@ class methods {
 			return false;
 		}
 		
-		$escaped_query = $db->escape($term);
-		$query = new cloud_unescaped(
-			"MATCH (title,artist,album) AGAINST ('$escaped_query')"
-		);
-		
-		$songs = $db->get_table('songs');
-		$result = $songs->fetch(
-			array($query),
-			FETCH_TOKENS,
-			array(
-				'limit'=>25
-			)
-		);
 		
 		view_manager::add_view(VIEW_PREFIX . "shell");
 		view_manager::add_view(VIEW_PREFIX . "search");
-		
 		view_manager::set_value("QUERY", $term);
-		view_manager::set_value('RESULTS', $result);
 		view_manager::set_value('REDIRECT', URL_PREFIX . 'search/?q=' . urlencode($term));
 		
-		if($session->logged_in) {
+		if(SEARCH_PROVIDER == "sphinx") {
 			
-			$r->lPush("tinytape_searchhistory_" . $session->username, $term);
+			$query = $sphinx->query($term);
+			$result = array();
 			
+			if(isset($query["matches"])) {
+				foreach($query["matches"] as $match=>$value) {
+					$result[] = array(
+						"id"=>$match,
+						"title"=>$r->hGet("tinytape_title", $match),
+						"artist"=>$r->hGet("tinytape_artist", $match),
+						"album"=>$r->hGet("tinytape_album", $match)
+					);
+				}
+			} else $result = false;
+			
+		} else {
+			$escaped_query = $db->escape($term);
+			$query = new cloud_unescaped(
+				"MATCH (title,artist,album) AGAINST ('$escaped_query')"
+			);
+			
+			$songs = $db->get_table('songs');
+			$result = $songs->fetch(
+				array($query),
+				FETCH_ARRAY,
+				array(
+					'limit'=>25
+				)
+			);
 		}
+		
+		view_manager::set_value('RESULTS', $result);
+		
+		if($session->logged_in)
+			$r->lPush("tinytape_searchhistory_" . $session->username, $term);
+		
 		$r->lPush("tinytape_searchhistory", $term);
 		$r->zIncrBy("tinytape_searchtally", 1, $term);
 		
