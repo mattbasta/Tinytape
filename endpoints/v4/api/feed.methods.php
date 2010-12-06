@@ -11,6 +11,8 @@ class methods {
 		if(!$session->logged_in)
 			return false;
 		
+		$offset = (int)$offset;
+		
 		switch($type) {
 			case "fullfeed":
 			case "searchhistory":
@@ -23,6 +25,7 @@ class methods {
 		
 		$json_data = false;
 		$payload = "";
+		$length = 50;
 		ob_start();
 		
 		function clearhistory($type, $username) {
@@ -38,59 +41,81 @@ class methods {
 			<?php
 		}
 		
+		function showmore($username, $type, $length, $offset) {
+			$rand = md5(uniqid());
+			?>
+			<a class="my_show_more" href="#" onclick="return show_more(this, '<?php echo addslashes(htmlentities($username)); ?>', '<?php echo $type; ?>', 'my_extend_<?php echo $rand; ?>', <?php echo $length + $offset; ?>);">Show More</a>
+			<div id="my_extend_<?php echo $rand;?>"></div>
+			<?php
+		}
+		
 		switch($type) {
 			case "fullfeed":
 			case "feed":
 			case "mentions":
 			case "followeefeed":
-				$items = $r->lGetRange("tinytape_{$type}_$username", 0, 25);
+				$length = 25;
+				$items = $r->lGetRange("tinytape_{$type}_$username", $offset, $length + $offset);
 				if($items) {
 					foreach($items as $feed_item)
 						require(PATH_PREFIX . "/feed_item.php");
+					showmore($username, $type, $length, $offset);
 				} else {
 					?>
 					<div id="feed_empty">
-						There are no items to display.
+						There are no<?php if($offset > 0) {echo " more";} ?> items to display.
 					</div>
 					<?php
 				}
 				break;
 				
 			case "searchhistory":
-				clearhistory($type, $username);
 				
-				$items = $r->lGetRange("tinytape_searchhistory_$username", 0, 50);
-				
-				foreach($items as $item) {
-					$item_hash = md5($item);
-				?>
-				<div class="feed_item searchhistory">
-					<a class="fi_delete" href="#" onclick="return delete_post('<?php echo addslashes(htmlentities($username)); ?>', 'searchhistory', '<?php echo $item_hash; ?>');">Delete</a>
-					<a href="<?php echo URL_PREFIX; ?>search?q=<?php echo urlencode($item); ?>"><?php echo htmlentities($item); ?></a>
-				</div>
-				<?php
+				$items = $r->lGetRange("tinytape_searchhistory_$username", $offset, $length + $offset);
+				if($items) {
+					clearhistory($type, $username);
+					
+					foreach($items as $item) {
+						$item_hash = md5($item);
+						?>
+						<div class="feed_item searchhistory">
+							<a class="fi_delete" href="#" onclick="return delete_post('<?php echo addslashes(htmlentities($username)); ?>', 'searchhistory', '<?php echo $item_hash; ?>');">Delete</a>
+							<a href="<?php echo URL_PREFIX; ?>search?q=<?php echo urlencode($item); ?>"><?php echo htmlentities($item); ?></a>
+						</div>
+						<?php
+					}
+					showmore($username, $type, $length, $offset);
+				} else {
+					?>
+					<div id="feed_empty">
+						There are no<?php if($offset > 0) {echo " more";} ?> items to display.
+					</div>
+					<?php
+					break;
 				}
 				break;
 				
 			case "history":
-				if($username == $session->username)
-					clearhistory($type, $username);
-				// Continue right into favorites
 			case "favorites":
 				
-				if($type == "history")
-					$items = $r->lGetRange("tinytape_{$type}_$username", 0, 30);
-				else
+				if($type == "history") {
+					$length = 30;
+					$items = $r->lGetRange("tinytape_{$type}_$username", $offset, $length + $offset);
+				} else
 					$items = $r->sMembers("tinytape_{$type}_$username");
 				
 				if(!$items) {
 					?>
 					<div id="feed_empty">
-						There are no items to display.
+						There are no<?php if($offset > 0) {echo " more";} ?> items to display.
 					</div>
 					<?php
 					break;
 				}
+				
+				
+				if($type == "history" && $username == $session->username)
+					clearhistory($type, $username);
 				
 				$song_table = $db->get_table("songs");
 				// TODO : Pull instance data in
@@ -138,6 +163,12 @@ class methods {
 				
 				echo '</ul>';
 				
+				if($type != "favorites")
+					showmore($username, $type, $length, $offset);
+				
+				break;
+			default:
+				$type = "null";
 		}
 		
 		$payload = ob_get_clean();
@@ -148,7 +179,8 @@ class methods {
 		
 		return new JSONResponse(array(
 			"payload"=>$payload,
-			"register"=>$json_data
+			"register"=>$json_data,
+			"append"=>$offset > 0
 		));
 	}
 	

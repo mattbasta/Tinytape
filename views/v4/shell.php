@@ -27,6 +27,9 @@ echo view_manager::render();
 if($session->logged_in) {
 	echo "logged_in = true;\nusername = '", htmlentities($session->username), "';\n";
 }
+if($default_feed = view_manager::get_value("FEED_TYPE")) {
+	echo "default_feed='$default_feed';\n";
+}
 ?>
 -->
 </script> 

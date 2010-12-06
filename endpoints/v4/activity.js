@@ -1,11 +1,15 @@
-function load_feed(username, type, t) {
+function load_feed(username, type, t, id, offset, onload) {
+	if(!id) id = "my_feed";
+	if(!offset) offset = 0;
 	$("#feedchooser a").removeClass("active");
 	$.getJSON(
-		"/api/feed/get_feed/" + escape(username) + "/" + type,
+		"/api/feed/get_feed/" + escape(username) + "/" + type + (offset?"/"+offset:""),
 		function(data) {
-			$("#my_feed").html(data.payload);
+			$("#" + id).html(data.payload);
 			if(data.register)
-				player.register_all(data.register);
+				player.register_all(data.register, data.append);
+			if(onload)
+				onload();
 		}
 	);
 	$(t).addClass("active");
@@ -30,6 +34,8 @@ $(document).ready(function() {
 		if(hash in {fullfeed:1,feed:1,mentions:1,searchhistory:1,history:1, favorites:1}) {
 			load_feed(username, hash, "#filter_" + hash);
 		}
+	} else {
+		load_feed(username, default_feed, "#filter_" + default_feed);
 	}
 	$("#my_shoutbox").elastic();
 });
@@ -49,5 +55,14 @@ function delete_post(username, type, hash) {
 		}
 	);
 	
+	return false;
+}
+
+function show_more(loader, username, type, id, length) {
+	loader = $(loader);
+	loader.addClass("pending");
+	load_feed(username, type, "", id, length + 1, function() {
+		loader.remove();
+	});
 	return false;
 }

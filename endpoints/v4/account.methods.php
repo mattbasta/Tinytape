@@ -62,7 +62,7 @@ class methods {
 		view_manager::add_view(VIEW_PREFIX . "account");
 		
 		view_manager::set_value("BADGES", $r->sMembers("tinytape_badges_$username"));
-		view_manager::set_value("NEWS_FEED", $r->lGetRange("tinytape_fullfeed_$username", 0, 25));
+		//view_manager::set_value("NEWS_FEED", $r->lGetRange("tinytape_fullfeed_$username", 0, 25));
 		view_manager::set_value("FOLLOWING_USERS", $following_users);
 		view_manager::set_value("TTBADGES", $tt_badges);
 		view_manager::set_value("USERNAME", $username);

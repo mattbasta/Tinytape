@@ -16,9 +16,11 @@ var player = {
 	register : function(reg, song) {
 		player._register[reg] = song;
 	},
-	register_all : function(data) {
-		player._register = {};
-		player._fav_register = {};
+	register_all : function(data, append) {
+		if(!append) {
+			player._register = {};
+			player._fav_register = {};
+		}
 		var favs = [];
 		for(var d in data) {
 			player.register(d, data[d]);

@@ -32,7 +32,7 @@ switch($fi["version"]) {
 				foreach($fi["payload"]["songs"] as $song) {
 				?>
 				<a href="<?php echo URL_PREFIX; ?>song/view/<?php echo $song["id"]; ?>">
-					<img src="<?php echo URL_PREFIX; ?>api/albumart/redirect?title=<?php echo urlencode($song["title"]); ?>&amp;artist=<?php echo urlencode($song["artist"]); ?>&amp;size=large" alt="<?php echo htmlentities($song["title"]); ?>" height="90" width="90" />
+					<img src="<?php echo URL_PREFIX; ?>api/albumart/redirect?title=<?php echo urlencode($song["title"]); ?>&amp;artist=<?php echo urlencode($song["artist"]); ?>&amp;size=large" alt="<?php echo htmlspecialchars($song["title"]); ?>" height="90" width="90" />
 				</a> 
 				<?php
 					$count--;

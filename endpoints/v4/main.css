@@ -502,6 +502,7 @@ jquery.autocomplete.css
 	border-top:1px solid #ccc;
 	padding:10px 5px;
 	font-size:1.1em;
+	position:relative;
 }
 #my_feed .feed_item .username {
 	float:left;
@@ -991,6 +992,9 @@ jquery.autocomplete.css
 	color:#333;
 	display:none;
 	float:right;
+	position:absolute;
+	top:3px;
+	right:3px;
 	border:1px solid #aaa;
 	padding:0.2em;
 	text-decoration:none;
@@ -1001,3 +1005,28 @@ jquery.autocomplete.css
 }
 .feed_item:hover .fi_delete {display:block;}
 .feed_item:hover .fi_delete:hover {color:#000;}
+
+.my_show_more {
+	display:block;
+	clear:both;
+	margin:15px auto;
+	padding:0.6em;
+	font-size:1.25em;
+	text-align:center;
+	width:40%;
+	background:#fafafa;
+	border:1px solid #bbb;
+	border-radius:4px;
+	-moz-border-radius:4px;
+	box-shadow:0 0 4px #ccc;
+	-moz-box-shadow:0 0 4px #ccc;
+	-webkit-box-shadow:0 0 4px #ccc;
+}
+.my_show_more:hover {
+	border:1px solid #888;
+	background:#fff;
+}
+.my_show_more.pending {
+	background:#ddd url(/images/pagination-loader.gif) no-repeat center center;
+	text-indent:-10000px;
+}
