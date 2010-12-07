@@ -4,6 +4,12 @@ define("SEARCH_PROVIDER", "sphinx");
 define("ENABLE_FACEBOOK", true);
 define("FB_ID", "192417860416");
 define("FB_SECRET", "364349eb3403b57d60520fa0b76a0e14");
+define("COLOR_REGEX", "/^[0-9A-Za-z]*$/");
+define("TAPE_REGEX", "/^[0-9A-Za-z\\-_]*$/");
+
+define("THROTTLE_PERHOUR", 50);
+define("THROTTLE_PERHOUR_ENABLE", true);
+define("THROTTLE_DUPLICATE_ENABLE", true);
 
 function user_exists($username) {
 	global $r;

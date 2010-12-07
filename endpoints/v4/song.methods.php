@@ -501,21 +501,25 @@ class methods {
 			
 			$username = $session->username;
 			
-			# No double dipping throttling
-			$last_song_played = $r->lGet("tinytape_history_$username", 0);
-			if($last_song_played == $id)
-				return false;
+			if(THROTTLE_DUPLICATE_ENABLE) {
+				# No double dipping throttling
+				$last_song_played = $r->lGet("tinytape_history_$username", 0);
+				if($last_song_played == $id)
+					return false;
+			}
 			
 			$r->lPush("tinytape_history_$username", $id);
 			$r->lPush("tinytape_history", $id);
 			
-			# 50 songs in an hour throttling
-			$rsongc_key = "tinytape_{$username}_" . floor(time() / 3600);
-			$recent_song_count = $r->incr($rsongc_key);
-			if($recent_song_count >= 50)
-				return false;
-			elseif($recent_song_count == 1)
-				$r->expire($rsongc_key, 3600); // Make the key go away in an hour or so
+			if(THROTTLE_PERHOUR_ENABLE) {
+				# 50 songs in an hour throttling
+				$rsongc_key = "tinytape_{$username}_" . floor(time() / 3600);
+				$recent_song_count = $r->incr($rsongc_key);
+				if($recent_song_count >= THROTTLE_PERHOUR)
+					return false;
+				elseif($recent_song_count == 1)
+					$r->expire($rsongc_key, 3600); // Make the key go away in an hour or so
+			}
 			
 			$session->song_count++;
 			
