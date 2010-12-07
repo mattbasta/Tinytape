@@ -1,9 +1,9 @@
 <div class="g2">&nbsp;</div>
 <div class="g8">
 	<hgroup id="song_title">
-		<h1 id="title"><?php echo htmlentities(view_manager::get_value('TITLE')); ?></h1>
-		<h2 id="artist"><?php echo htmlentities(view_manager::get_value('ARTIST')); ?></h2>
-		<h2 id="album"><?php echo htmlentities(view_manager::get_value('ALBUM')); ?></h2>
+		<h1 id="title" class="sed_title"><?php echo htmlentities(view_manager::get_value('TITLE')); ?></h1><br />
+		<h2 id="artist" class="sed_artist"><?php echo htmlentities(view_manager::get_value('ARTIST')); ?></h2><br />
+		<h2 id="album" class="sed_album"><?php echo htmlentities(view_manager::get_value('ALBUM')); ?></h2>
 	</hgroup>
 	<?php
 	$results = view_manager::get_value('INSTANCES');
@@ -41,7 +41,7 @@
 			?>');">play</a>)
 		</div>
 		<div class="no_results scrappy">
-			<p>Sometimes we don't have a great copy of a song. <a href="<?php echo URL_PREFIX; ?>song/search/<?php echo view_manager::get_value('ID'); ?>">Help yourself to a new copy</a> if you're not satisfied.</p>
+			<p>Sometimes we don't have a great copy of the song. <a href="<?php echo URL_PREFIX; ?>song/search/<?php echo view_manager::get_value('ID'); ?>">Help yourself to a new copy</a> if you're not satisfied.</p>
 		</div>
 		<ol class="songlist">
 		<?php

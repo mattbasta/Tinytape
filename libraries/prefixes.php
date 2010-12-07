@@ -6,6 +6,7 @@ define("FB_ID", "192417860416");
 define("FB_SECRET", "364349eb3403b57d60520fa0b76a0e14");
 define("COLOR_REGEX", "/^[0-9A-Za-z]*$/");
 define("TAPE_REGEX", "/^[0-9A-Za-z\\-_]*$/");
+define("EDIT_SONG_MIN_POINTS", 750);
 
 define("THROTTLE_PERHOUR", 50);
 define("THROTTLE_PERHOUR_ENABLE", true);
@@ -106,7 +107,8 @@ function getLevel($user_score) {
 	
 	if($user_score < 2500) {
 		$user_level = 1;
-		while($levels[$user_level + 1] < $user_score)
+		$clev = count($levels);
+		while($levels[$user_level + 1] < $user_score && $user_level < $clev + 1)
 			$user_level++;
 	} else {
 		$user_level = floor(($user_score - 1500) / 1000) + 8;

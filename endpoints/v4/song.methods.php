@@ -249,6 +249,7 @@ class methods {
 		
 		view_manager::add_view(VIEW_PREFIX . "song/song");
 		view_manager::set_value('ID', $song->id);
+		view_manager::set_value('SONG_PAGE', true);
 		
 		view_manager::set_value('BONUS', isset($_REQUEST['bonus']));
 		

@@ -619,10 +619,18 @@ jquery.autocomplete.css
 #song_title h2 {
 	font-weight:normal;
 	line-height:1.25em;
+	display:inline;
 }
 #search_title h1,
 #song_title h1 {font-size:1.85em;}
 #song_title h2 {font-size:1.3em;}
+#song_title input,
+#song_title button {
+	display:inline;
+	margin:0 0.25em;
+	font-size:1em;
+	padding:0.1;
+}
 
 .songlist {
 	list-style:none;

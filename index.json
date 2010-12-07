@@ -47,10 +47,6 @@
 		},
 		{
 			"type":"lib",
-			"library":"draw"
-		},
-		{
-			"type":"lib",
 			"library":"cloud/cloud"
 		},
 		{
@@ -64,6 +60,10 @@
 		{
 			"type":"lib",
 			"library":"sphinx"
+		},
+		{
+			"type" : "lib",
+			"library" : "S3"
 		},
 		{
 			"type":"folder",

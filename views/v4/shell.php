@@ -6,6 +6,7 @@
 <meta name="google-site-verification" content="BxfiErkYh-Zi84pZg6foCn6oH1SGkp1PeZzBq0jwpvU" />
 <!--[if IE]><script type="text/javascript" src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
 <script type="text/javascript" src="/scripts/compact.js"></script>
+<script type="text/javascript" src="/scripts/jquery.jeditable.min.js"></script>
 <script type="text/javascript" src="<?php echo URL_PREFIX; ?>invisiplayer.js"></script>
 <link type="text/css" rel="stylesheet" href="http://framecdn.serverboy.net/latest.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo URL_PREFIX; ?>common.css" />
@@ -29,6 +30,15 @@ if($session->logged_in) {
 }
 if($default_feed = view_manager::get_value("FEED_TYPE")) {
 	echo "default_feed='$default_feed';\n";
+}
+if(view_manager::get_value("SONG_PAGE") && view_manager::get_value("USER_SCORE") > EDIT_SONG_MIN_POINTS) {
+	?>
+$(document).ready(function(){
+	$(".sed_title").editable("<?php echo URL_PREFIX; ?>api/songs/edit/<?php echo view_manager::get_value("ID"); ?>/title",{submit:"OK"});
+	$(".sed_artist").editable("<?php echo URL_PREFIX; ?>api/songs/edit/<?php echo view_manager::get_value("ID"); ?>/artist",{submit:"OK"});
+	$(".sed_album").editable("<?php echo URL_PREFIX; ?>api/songs/edit/<?php echo view_manager::get_value("ID"); ?>/album",{submit:"OK"});
+});
+	<?php
 }
 ?>
 -->
