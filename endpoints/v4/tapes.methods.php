@@ -55,9 +55,9 @@ class methods {
 		$title = $_REQUEST["title"];
 		$color = substr($_REQUEST["color"], 1);
 		
-		$acceptable_chars = "/^[0-9A-Za-z]*$/";
+		$acceptable_chars = COLOR_REGEX;
 		preg_match($acceptable_chars, $color, $color_matches);
-		$acceptable_chars = "/^[0-9A-Za-z\\-_]*$/";
+		$acceptable_chars = TAPE_REGEX;
 		preg_match($acceptable_chars, $tape, $url_matches);
 		if(strlen($title) < 3 ||
 		   strlen($color) != 6 ||
@@ -114,15 +114,23 @@ class methods {
 		
 		if(empty($tape) ||
 		   !$session->logged_in ||
-		   !$r->sContains("tinytape_tapes", $tape)) {
-			header("Location: " . URL_PREFIX . "account");
+		   !$r->sContains("tinytape_tapes", $tape) ||
+		   $r->hGet("tinytape_tapeowner", $tape) != $session->username) {
+			echo "Not Deleted";
+			//header("Location: " . URL_PREFIX . "account");
 			return false;
 		}
 		
 		$r->sRemove("tinytape_tapes", $tape);
+		$r->delete("tinytape_tape_$tape");
+		$r->delete("tinytape_tapecontents_$tape");
+		$r->hDel("tinytape_tapeowner", $tape);
 		$tapes = $db->get_table("tapes");
 		$t = $tapes->fetch(array("name"=>$tape), FETCH_SINGLE_TOKEN);
 		$t->destroy();
+		
+		//header("Location: " . URL_PREFIX . "account");
+		return false;
 		
 	}
 	

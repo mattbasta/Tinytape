@@ -123,3 +123,14 @@ footer {
 #searchlist li .embedcontrols a:hover {
 	text-decoration:underline;
 }
+
+h1 form,
+h1 form input {
+	margin:0;
+	padding:0;
+}
+
+h1#edit_head {padding-right:1.75em;}
+h1#edit_head:hover {
+	background:rgba(255,255,255,0.15) url(/images/tapepencil.png) no-repeat right center;
+}

@@ -14,6 +14,7 @@
 	<link type="text/css" rel="stylesheet" href="<?php echo URL_PREFIX; ?>common.css" />
 	<link type="text/css" rel="stylesheet" href="/scripts/fancybox/jquery.fancybox-1.3.1.css" media="screen" />
 	<script src="/scripts/compact.js" type="text/javascript"></script>
+	<script src="/scripts/jquery.jeditable.min.js" type="text/javascript"></script>
 <?php
 // Effectively view_manager::add_view() in reverse
 array_unshift(view_manager::$stack, VIEW_PREFIX . "snippets/jquery_reload");
@@ -22,8 +23,19 @@ echo view_manager::render();
 ?>
 <script type="text/javascript"> 
 <?php
+$owner = false;
 if($session->logged_in) {
 	echo "logged_in = true;\nusername = '", htmlentities($session->username), "';\n";
+	$owner = $session->username == view_manager::get_value("OWNER") || $session->admin;
+}
+if($owner) {
+?>
+$(document).ready(function() {
+	var ehead = document.getElementById("head");
+	$(ehead).editable("<?php echo URL_PREFIX; ?>api/tapes/edit/<?php echo urlencode(view_manager::get_value("ID")); ?>/title", {width:350});
+	ehead.id = "edit_head";
+});
+<?php
 }
 ?>
 -->
@@ -33,18 +45,18 @@ if($session->logged_in) {
 <body class="sans-serif">
 <div id="container">
 	<header>
-		<h1><?=view_manager::get_value('TITLE')?></h1>
-		<div class="hcont" style="background:#<?=view_manager::get_value('COLOR')?>">
+		<h1 id="head"><?php echo view_manager::get_value('TITLE'); ?></h1>
+		<div class="hcont" style="background:#<?php echo view_manager::get_value('COLOR'); ?>">
 			<?
 			if(view_manager::get_value('SHUFFLE')){
 				echo '<a rel="nofollow" href="?">Turn Shuffle Off</a>';
 			}else{
 				echo '<a rel="nofollow" href="?shuffle">Turn Shuffle On</a>';
 			}
-			if($session->logged_in && $session->username == view_manager::get_value("OWNER")) {
-				?> &bull; <a href="/tapes/<?=view_manager::get_value('NAME')?>">Edit Tape</a><?php
+			if($owner) {
+				?> &bull; <a onclick="return confirm('Are you sure you want to delete this tape?');" href="<?php echo URL_PREFIX, "tapes/delete/", view_manager::get_value('ID'); ?>">Delete Tape</a> <?php
 			}
-			?> &bull; <a href="/tape/<?=view_manager::get_value('ID')?>">Back to Tinytape</a>
+			?> &bull; <a href="<?php echo URL_PREFIX; ?>account">Back to Tinytape</a>
 		</div>
 		<div class="clear"></div>
 	</header>
@@ -97,7 +109,7 @@ if($session->logged_in) {
 		</script>
 		<?php
 		} else {
-			?><p id="whoawhoawhoa">Whoa whoa whoa whoa. You don't have any songs here yet! You should <a href="<?php echo URL_PREFIX; ?>search">go find some</a>.</p><?php
+			?><p id="whoawhoawhoa">Whoa whoa whoa whoa. There aren't any songs here yet! <?php if($owner) { ?>You should <a href="<?php echo URL_PREFIX; ?>search">go find some</a>.</p><?php } else { ?>Well it was a good try. Next time, right?<?php }
 		}
 		?>
 	</div>

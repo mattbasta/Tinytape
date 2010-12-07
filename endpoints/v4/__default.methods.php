@@ -58,7 +58,7 @@ class methods {
 		
 		view_manager::add_view(VIEW_PREFIX . 'tape');
 		view_manager::set_value('TITLE', $tape->title);
-		view_manager::set_value('NAME', $tape->name);
+		view_manager::set_value('ID', $tape->name);
 		view_manager::set_value('OWNER', $tape->user);
 		view_manager::set_value('COLOR', $tape->color);
 		
