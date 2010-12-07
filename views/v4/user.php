@@ -10,10 +10,10 @@ $level = getLevel($score);
 	</div>
 	<div class="clear"></div>
 	<menu id="feedchooser">
-		<li><a data-type="feed" class="active" href="#">Just <?php echo htmlentities($username); ?></a></li>
-		<li><a data-type="mentions" href="#">Everyone Else</a></li>
-		<li><a data-type="history" href="#">History</a></li>
-		<li><a data-type="favorites" href="#">Favorites</a></li>
+		<li><a id="filter_feed" data-type="feed" class="active" href="#">Just <?php echo htmlentities($username); ?></a></li>
+		<li><a id="filter_mentions" data-type="mentions" href="#">Everyone Else</a></li>
+		<li><a id="filter_history" data-type="history" href="#">History</a></li>
+		<li><a id="filter_favorites" data-type="favorites" href="#">Favorites</a></li>
 	</menu>
 	<script type="text/javascript">
 	<!--

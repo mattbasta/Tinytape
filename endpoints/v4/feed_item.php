@@ -63,8 +63,10 @@ switch($fi["version"]) {
 				$tape = $fi["payload"]["name"];
 				if(!isset($r))
 					$r = view_manager::get_value("redis");
-				if(!$r->sContains("tinytape_tapes", $tape))
+				if(!$r->sContains("tinytape_tapes", $tape)) {
+					?><p> created a tape, but deleted it. <small>(probably just to spite you)</small></p><?php
 					break;
+				}
 				?>
 				<p> just created a tape called </p>
 				<strong style="background:#<?php echo $fi["payload"]["color"]; ?>"><a href="<?php echo URL_PREFIX; ?>tape/<?php echo urlencode($tape); ?>"><?php echo htmlentities($fi["payload"]["title"]); ?></a></strong>

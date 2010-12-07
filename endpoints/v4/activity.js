@@ -1,7 +1,8 @@
 function load_feed(username, type, t, id, offset, onload) {
 	if(!id) id = "my_feed";
 	if(!offset) offset = 0;
-	$("#feedchooser a").removeClass("active");
+	if(t)
+		$("#feedchooser a").removeClass("active");
 	$.getJSON(
 		"/api/feed/get_feed/" + escape(username) + "/" + type + (offset?"/"+offset:""),
 		function(data) {
@@ -12,7 +13,8 @@ function load_feed(username, type, t, id, offset, onload) {
 				onload();
 		}
 	);
-	$(t).addClass("active");
+	if(t)
+		$(t).addClass("active");
 }
 
 function clear_history(history) {
@@ -35,7 +37,7 @@ $(document).ready(function() {
 			load_feed(username, hash, "#filter_" + hash);
 		}
 	} else {
-		load_feed(username, default_feed, "#filter_" + default_feed);
+		load_feed(username, default_feed);
 	}
 	$("#my_shoutbox").elastic();
 });

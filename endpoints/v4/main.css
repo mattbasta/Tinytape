@@ -511,6 +511,7 @@ jquery.autocomplete.css
 	padding-right:1ex;
 }
 #my_feed .feed_item.following p,
+#my_feed .feed_item.new_tape p,
 #my_feed .feed_item.shout p {margin:0;}
 #my_feed .feed_item.songs .feedsongs,
 #my_feed .feed_item.badge_earned .feedbadge {clear:both;}
