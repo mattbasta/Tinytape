@@ -106,8 +106,8 @@ class methods {
 			$mention = strtolower($mention);
 			if(user_exists($mention)) {
 				$mentioned[] = $mention;
-				// TODO : Add controls to disable users from pushing to fullfeed
-				push_to_feed("tinytape_fullfeed_$mention", $post);
+				if($r->sContains("tinytape_followers_" . $session->username, $mention))
+					push_to_feed("tinytape_fullfeed_$mention", $post);
 				push_to_feed("tinytape_mentions_$mention", $post);
 			}
 		}
@@ -120,35 +120,61 @@ class methods {
 		$r->zIncrBy("tinytape_scores", 1, $username);
 		
 		if(ENABLE_FACEBOOK && !empty($_REQUEST["dofb"]) && $uid = $r->hGet("tinytape_facebook", $username)) {
-			
-			$token = $r->hGet("tinytape_facebook_token", $username);
-			
-			$fields_raw = array(
-				// I could have sworn FB allowed HTML in stream posts :(
-				//"message"=>shout_process($post_text, "http://tinytape.com" . URL_PREFIX),
-				"message"=>$post_text,
-				"actions"=>json_encode(array(
-					"name"=>"Look up $username on Tinytape",
-					"link"=>"http://tinytape.com" . URL_PREFIX . "user/$username"
-				))
-			);
-			$fields = "";
-			foreach($fields_raw as $key=>$value) { $fields .= $key.'='.urlencode($value).'&'; }
-			
-			$ch = curl_init("https://graph.facebook.com/$uid/feed");
-			curl_setopt($ch, CURLOPT_POST, 1);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $fields.$token);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER  ,1);  // RETURN THE CONTENTS OF THE CALL
-			curl_exec($ch);
-			
-			$r->zIncrBy("tinytape_fbposts", 1, $username);
-			$r->incr("tinytape_fbposts_total", 1);
-			
-			
+			$this->writetofb($post_text, $uid, $username);
+			foreach($mentioned as $mention)
+				if($r->sContains("tinytape_following_" . $session->username, $mention)
+				   && $men_uid = $r->hGet("tinytape_facebook", $mention)) {
+					$this->writetofb($post_text, $men_uid, $mention, $uid);
+				}
 		}
 		
 		header("Location: " . URL_PREFIX . "account");
 		return false;
+		
+	}
+	
+	public function writetofb($post_text, $uid, $username, $from="") {
+		global $r;
+		
+		if(!$from)
+			$from = $uid;
+		
+		$token = $r->hGet("tinytape_facebook_token", $username);
+		
+		$fields_raw = array(
+			// I could have sworn FB allowed HTML in stream posts :(
+			//"message"=>shout_process($post_text, "http://tinytape.com" . URL_PREFIX),
+			"message"=>$post_text,
+			"uid"=>$from,
+			"target_id"=>$uid
+		);
+		$fields = "";
+		foreach($fields_raw as $key=>$value) { $fields .= $key.'='.urlencode($value).'&'; }
+		file_get_contents("https://api.facebook.com/method/stream.publish?" . $fields . $token);
+		
+		/*
+		$fields_raw = array(
+			// I could have sworn FB allowed HTML in stream posts :(
+			//"message"=>shout_process($post_text, "http://tinytape.com" . URL_PREFIX),
+			"message"=>$post_text,
+			"actions"=>json_encode(array(
+				"name"=>"$username's Tinytape",
+				"link"=>"http://tinytape.com" . URL_PREFIX . "user/$username"
+			))
+		);
+		$fields = "";
+		foreach($fields_raw as $key=>$value) { $fields .= $key.'='.urlencode($value).'&'; }
+		
+		$ch = curl_init("https://graph.facebook.com/$uid/feed");
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $fields.$token);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER  ,1);  // RETURN THE CONTENTS OF THE CALL
+		curl_exec($ch);
+		*/
+		
+		
+		$r->zIncrBy("tinytape_fbposts", 1, $username);
+		$r->incr("tinytape_fbposts_total", 1);
 		
 	}
 	
