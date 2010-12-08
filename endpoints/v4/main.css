@@ -1039,3 +1039,29 @@ jquery.autocomplete.css
 	background:#ddd url(/images/pagination-loader.gif) no-repeat center center;
 	text-indent:-10000px;
 }
+
+#song_breadcrumb {
+	font-size:1.25em;
+	padding:1.5em 0;
+}
+
+.albumscroller {
+	padding:20px 0;
+}
+
+.albumscroller a img {
+	transition: all 0.2s ease-out;
+	-moz-transition: all 0.2s ease-out;  
+	-o-transition: all 0.2s ease-out;  
+	-webkit-transition: all 0.2s ease-out;  
+	transform:scale(1);
+	-moz-transform:scale(1);
+	-webkit-transform:scale(1);
+	-o-transform:scale(1);
+}
+.albumscroller a:hover img {
+	transform:scale(1.2,1.2);
+	-moz-transform:scale(1.2,1.2);
+	-webkit-transform:scale(1.2,1.2);
+	-o-transform:scale(1.2,1.2);
+}

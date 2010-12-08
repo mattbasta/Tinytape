@@ -1,9 +1,19 @@
+<?php
+$e_title = htmlentities(view_manager::get_value('TITLE'));
+$e_artist = htmlentities(view_manager::get_value('ARTIST'));
+$e_album = htmlentities(view_manager::get_value('ALBUM'));
+
+view_manager::add_view(VIEW_PREFIX . "song/song_breadcrumb");
+echo view_manager::render();
+
+?>
+<div class="clear"></div>
 <div class="g2">&nbsp;</div>
 <div class="g8">
 	<hgroup id="song_title">
-		<h1 id="title" class="sed_title"><?php echo htmlentities(view_manager::get_value('TITLE')); ?></h1><br />
-		<h2 id="artist" class="sed_artist"><?php echo htmlentities(view_manager::get_value('ARTIST')); ?></h2><br />
-		<h2 id="album" class="sed_album"><?php echo htmlentities(view_manager::get_value('ALBUM')); ?></h2>
+		<h1 id="title" class="sed_title"><?php echo $e_title; ?></h1><br />
+		<h2 id="artist" class="sed_artist"><?php echo $e_artist; ?></h2><br />
+		<h2 id="album" class="sed_album"><?php echo $e_album; ?></h2>
 	</hgroup>
 	<?php
 	$results = view_manager::get_value('INSTANCES');

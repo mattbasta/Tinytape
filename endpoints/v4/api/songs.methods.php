@@ -32,8 +32,9 @@ class methods {
 					break;
 				}
 				
-				if($old_updater = $r->hGet("tinytape_updated_$field")) {
+				if($old_updater = $r->hGet("tinytape_updated_$field", $song_id)) {
 					$r->zIncrBy("tinytape_karma", -1, $old_updater);
+					$r->zIncrBy("tinytape_karmafrom_" . $session->username, -1, $old_updater);
 				}
 				
 				$song->setValues(array($field=>$value));

@@ -36,7 +36,7 @@ if(view_manager::get_value("SONG_PAGE") && view_manager::get_value("USER_SCORE")
 $(document).ready(function(){
 	$(".sed_title").editable("<?php echo URL_PREFIX; ?>api/songs/edit/<?php echo view_manager::get_value("ID"); ?>/title",{submit:"OK"});
 	$(".sed_artist").editable("<?php echo URL_PREFIX; ?>api/songs/edit/<?php echo view_manager::get_value("ID"); ?>/artist",{submit:"OK"});
-	$(".sed_album").editable("<?php echo URL_PREFIX; ?>api/songs/edit/<?php echo view_manager::get_value("ID"); ?>/album",{submit:"OK"});
+	$(".sed_album").editable("<?php echo URL_PREFIX; ?>api/songs/edit/<?php echo view_manager::get_value("ID"); ?>/album",{submit:"OK", tooltip: "(click to add)"});
 });
 	<?php
 }

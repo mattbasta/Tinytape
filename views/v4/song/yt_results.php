@@ -7,8 +7,8 @@ if(view_manager::get_value("BONUS")) {
 }
 ?>
 <hgroup id="song_title">
-	<h1 id="title"><?php echo htmlspecialchars(view_manager::get_value('TITLE')); ?></h1>
-	<h2 id="artist"><?php echo htmlspecialchars(view_manager::get_value('ARTIST')); ?></h2>
+	<h1 id="title"><?php echo htmlspecialchars(view_manager::get_value('TITLE')); ?></h1><br />
+	<h2 id="artist"><?php echo htmlspecialchars(view_manager::get_value('ARTIST')); ?></h2><br />
 	<h2 id="album"><?php echo htmlspecialchars(view_manager::get_value('ALBUM')); ?></h2>
 </hgroup>
 <div class="g2">&nbsp;</div>

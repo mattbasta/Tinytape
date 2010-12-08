@@ -203,6 +203,89 @@ class methods {
 		
 	}
 	
+	private function album($name, $album) {
+		global $db, $r, $session;
+		
+		$songs = $db->get_table('songs');
+		
+		$name = urldecode($name);
+		$song = $songs->fetch(
+			array(
+				'artist'=>$name,
+				'album'=>$album
+			),
+			FETCH_ARRAY
+		);
+		
+		if($song === false) {
+			return $this->not_found();
+		}
+		
+		view_manager::set_value('TITLE', "$album by $name");
+		view_manager::set_value('ARTIST', $name);
+		view_manager::set_value('ALBUM', $album);
+		view_manager::set_value('NAME', $album);
+		view_manager::set_value('SONGS', $song);
+		view_manager::set_value('REDIRECT', URL_PREFIX . 'song/artist' . urlencode($name) . "/" . urlencode($album));
+		
+		view_manager::add_view(VIEW_PREFIX . "shell");
+		view_manager::add_view(VIEW_PREFIX . "song/album");
+		
+		return view_manager::render_as_httpresponse();
+		
+	}
+	
+	public function artist($name, $album="") {
+		global $db, $r, $session;
+		
+		if(empty($name)) {
+			header("Location: " . URL_PREFIX . "search");
+			return false;
+		}
+		
+		if(!empty($album)) {
+			return $this->album($name, $album);
+		}
+		
+		
+		$songs = $db->get_table('songs');
+		
+		$name = urldecode($name);
+		$song = $songs->fetch(
+			array(
+				'artist'=>$name
+			),
+			FETCH_ARRAY
+		);
+		
+		if($song === false) {
+			return $this->not_found();
+		}
+		
+		$albums = $songs->fetch(
+			array(
+				'artist'=>$name
+			),
+			FETCH_ARRAY,
+			array(
+				"columns"=>array("album"),
+				"grouping"=>array(cloud::_st("album"))
+			)
+		);
+		view_manager::set_value('TITLE', $name);
+		view_manager::set_value('ARTIST', $name);
+		view_manager::set_value('ALBUMS', $albums);
+		view_manager::set_value('NAME', $name);
+		view_manager::set_value('SONGS', $song);
+		view_manager::set_value('REDIRECT', URL_PREFIX . 'song/artist' . urlencode($name));
+		
+		view_manager::add_view(VIEW_PREFIX . "shell");
+		view_manager::add_view(VIEW_PREFIX . "song/artist");
+		
+		return view_manager::render_as_httpresponse();
+		
+	}
+	
 	public function view($id) {
 		global $db, $r, $session;
 		
@@ -258,7 +341,7 @@ class methods {
 		view_manager::set_value('ARTIST', $song->artist);
 		view_manager::set_value('ALBUM', $song->album);
 		
-		view_manager::set_value('REDIRECT', '/song/' . $song->id);
+		view_manager::set_value('REDIRECT', URL_PREFIX . 'song/' . $song->id);
 		view_manager::set_value('INSTANCES', $instances);
 		
 		return view_manager::render_as_httpresponse();
