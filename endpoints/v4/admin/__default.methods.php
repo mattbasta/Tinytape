@@ -16,6 +16,25 @@ class methods {
 		return view_manager::render_as_httpresponse();
 		
 	}
+	public function emails() {
+		global $session, $db, $r;
+		
+		if(!$session->admin)
+			return false;
+		
+		$users = $db->get_table("users");
+		$uarr = $users->fetch(
+			TRUE,
+			FETCH_ARRAY
+		);
+		
+		foreach($uarr as $user) {
+			echo $user["username"], "\t", $user["email"], "\n";
+		}
+		
+		return false;
+		
+	}
 	public function seed() {
 		global $session, $db, $r;
 		
