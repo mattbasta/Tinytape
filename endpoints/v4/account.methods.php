@@ -133,7 +133,7 @@ class methods {
 		
 	}
 	
-	public function writetofb($post_text, $uid, $username, $from="") {
+	private function writetofb($post_text, $uid, $username, $from="") {
 		global $r;
 		
 		if(!$from)
