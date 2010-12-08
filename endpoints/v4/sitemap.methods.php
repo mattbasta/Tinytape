@@ -9,6 +9,30 @@ class methods {
 		return view_manager::render_as_httpresponse();
 	}
 	
+	public function tapes() {
+		global $r, $keyval;
+		
+		if(!($output = $keyval->get("tinytape/sitemaps/tapes"))) {
+			$pages_raw = $r->sMembers("tinytape_tapes");
+			
+			$pages = array();
+			foreach($pages_raw as $page) {
+				$pages[] = "tape/$page";
+			}
+			
+			view_manager::set_value("PAGES", $pages);
+			view_manager::set_value("UPDATES", "weekly");
+			
+			view_manager::add_view(VIEW_PREFIX . "sitemaps/shell");
+			
+			$output = view_manager::render();
+			$keyval->set("tinytape/sitemaps/tapes", $output, 3600 * 6);
+		}
+		
+		return new HttpResponse($output);
+		
+	}
+	
 	public function users() {
 		global $r, $keyval;
 		
