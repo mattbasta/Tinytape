@@ -1,0 +1,80 @@
+Note that when query is said to "run" it is pausing the state of that task and executing the next task until runtime. After run, each task is sequentially revisited to finish execution.
+
+Note that if a virtualized condition dictates that a returned row is indeed _not_ a match, it should be dropped immediately.
+
+Aggregate variables
+	built on functions?
+		no
+			ignore, they're cool
+		yes
+			function supported?
+				yes
+					ignore, it's cool
+				no
+					add variables that function requires to query
+					strip problem functions
+					strip functions and variables that depend on stripped functions
+					store list of stripped resources for later
+Aggregate conditions
+	virtualized functions?
+		yes
+			replace if possible
+			still virtualized functions?
+				yes
+					strip virtualized functions
+					store list of stripped functions and dependent comparisons
+						make sure to still execute "good" halves of AND comparisons
+					run query
+					rebuild comparisons from leaves of comparison tree inwards
+				no
+					cool, you're golden
+		no
+			awesome!
+	unsupported conditions?
+		yes
+			suitable replacement?
+				yes
+					throw general warning
+						> An unsupported condition is being used on the query, but it is being virtualized
+						+ Details on comparison
+						+ Details on query
+					can be executed at runtime?
+						yes
+							replace and restructure query
+							you're golden
+						no
+							include any sub-queries that can executed at runtime
+								- as variable if possible
+								- as conditional
+							include variables that may be necessary for virtualized condition
+							create list of unsupported conditions
+							run query
+							reparse conditions
+				no
+					throw error
+						> An unsupported, unvirtualizable condition is being used on your database
+		no
+			nice!
+Sorting
+	are sort variables dependent on virtualized functions?
+		no
+			ignore, it's cool
+		yes
+			is there a limit being imposed?
+				no
+					sort by virtualized data
+				yes
+					throw unsafe warning
+						> Data reliability may not be at a safe grade for production use.
+					if limit < max results per query || max results per query % limit < max results per query
+						increase limit to maximum results to fill a response
+					run query
+						If matched responses > max responses for the query
+							throw unsafe error
+								> Data integrity has been compromised.
+								+ Provide details on virtualized crap that's f-ing things up
+						If response is null
+							return null immediately
+					[Execute virtualized functions]
+					Run sort on results
+					Re-impose original limit

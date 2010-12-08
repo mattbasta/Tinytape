@@ -15,7 +15,7 @@
 <?php
 
 if($thumbnail = view_manager::get_value("THUMBNAIL")) {
-	?><link type="image/jpeg" rel="image_src" href="<?php echo $thumbnail; ?>" /><?php
+	?><link type="image/jpeg" rel="image_src" href="<?php echo htmlentities($thumbnail); ?>" /><?php
 }
 
 // Effectively view_manager::add_view() in reverse

@@ -208,7 +208,7 @@ class methods {
 		
 		$songs = $db->get_table('songs');
 		
-		$name = urldecode($name);
+		$album = urldecode($album);
 		$song = $songs->fetch(
 			array(
 				'artist'=>$name,
@@ -243,14 +243,13 @@ class methods {
 			return false;
 		}
 		
-		if(!empty($album)) {
+		$name = urldecode($name);
+		if(!empty($album))
 			return $this->album($name, $album);
-		}
 		
 		
 		$songs = $db->get_table('songs');
 		
-		$name = urldecode($name);
 		$song = $songs->fetch(
 			array(
 				'artist'=>$name
@@ -268,10 +267,15 @@ class methods {
 			),
 			FETCH_ARRAY,
 			array(
-				"columns"=>array("album"),
-				"grouping"=>array(cloud::_st("album"))
+				"columns"=>array(
+					"album",
+					new cloud_unescaped("COUNT(*) as count")
+				),
+				"grouping"=>array(cloud::_st("album")),
+				"order"=>new listOrder('count','DESC')
 			)
 		);
+		view_manager::set_value('THUMBNAIL', URL_PREFIX . "api/artistart/redirect?artist=" . urlencode($name) . "&size=largesquare");
 		view_manager::set_value('TITLE', $name);
 		view_manager::set_value('ARTIST', $name);
 		view_manager::set_value('ALBUMS', $albums);
@@ -445,8 +449,8 @@ class methods {
 				continue;
 			
 			$required_songs = (int)$r->hGet("tinytape_badgesets_required", $badge);
-			// Should we even look further?
-			if($required_songs <= $num_songs) {
+			
+			if($required_songs <= $num_songs) { // Should we even look further?
 				$badge_songs = $r->sMembers("tinytape_badgesets_$badge");
 				$acquired_songs = 0;
 				foreach($songs as $song) {

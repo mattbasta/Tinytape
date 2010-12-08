@@ -46,6 +46,7 @@ echo view_manager::render();
 		</div>
 		<?php
 	} else {
+		/*
 		?>
 		<div id="song_controls">
 			(<a href="javascript:player.start('<?php
@@ -53,6 +54,7 @@ echo view_manager::render();
 			echo sha1($do_play["id"] . $tempsecret);
 			?>');">play</a>)
 		</div>
+		*/?>
 		<div class="no_results scrappy">
 			<p><?php echo count($results); ?> songs</p>
 		</div>

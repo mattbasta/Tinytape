@@ -29,6 +29,17 @@ class methods {
 		return false;
 	}
 	
+	public function proxy() {
+		
+		$result = $this->determine();
+		if($result == false)
+			$result = PATH_PREFIX . "/../static/images/noart.jpg";
+		
+		echo file_get_contents($result);
+		
+		return false;
+	}
+	
 	private function determine() {
 		global $keyval;
 		
@@ -36,11 +47,12 @@ class methods {
 			die('Missing artist');
 		
 		$artist = urlencode($_REQUEST['artist']);
+		$size_spec = !empty($_REQUEST['size'])?$_REQUEST['size']:"large";
 		
 		$url = "http://ws.audioscrobbler.com/2.0/?format=json&method=artist.getImages&api_key=" . LASTFM_APIKEY . "&artist=$artist";
 		
-		if(!($json_data = $keyval->get("tt_aacache.$url")))
-			$keyval->set("tt_aacache.$url", $json_data = file_get_contents($url));
+		if(!($json_data = $keyval->get("tt_aacache.$url.$size_spec")))
+			$keyval->set("tt_aacache.$url.$size_spec", $json_data = file_get_contents($url));
 		
 		$json = json_decode($json_data, true);
 		
@@ -54,7 +66,7 @@ class methods {
 			if(empty($match["sizes"]["size"]))
 				return "/images/noart.jpg";
 			foreach($match["sizes"]["size"] as $size)
-				if($size["name"] == "large")
+				if($size["name"] == $size_spec)
 					return $size["#text"];
 			
 		}
