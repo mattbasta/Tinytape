@@ -98,4 +98,48 @@ class methods {
 		
 	}
 	
+	public function reorder($tape) {
+		global $session, $db, $r;
+		
+		if(!$session->logged_in
+		   || empty($tape)
+		   || !$r->sContains("tinytape_tapes", $tape)
+		   || $r->hGet("tinytape_tapeowner", $tape) != $session->username
+		   || empty($_REQUEST['order'])) {
+			return new JSONResponse(array("error"=>"Invalid request"));
+		}
+		
+		// Double array flip to eliminate all duplicates
+		$order = json_decode($_REQUEST["order"], true);
+		$dup = array_flip(array_flip($order));
+		if(count($dup) < count($order))
+			return new JSONResponse(array("error"=>"Duplicate entries"));
+		
+		// Convert the keys to ints and test their presence in the tape
+		$inty = array();
+		foreach($order as $k=>$v) {
+			if(!$r->sContains("tinytape_tapecontents_$tape", $v))
+				return new JSONResponse(array("error"=>"Unknown entities"));
+			$inty[(int)$k] = $v;
+		}
+		
+		ksort($inty);
+		
+		$tempid = uniqid();
+		foreach($inty as $k=>$song) {
+			$r->rPush("tinytape_tapereorder_$tempid", $song);
+		}
+		
+		//var_dump($r->lGetRange("tinytape_tapereorder_$tempid", 0, -1));
+		//var_dump($r->lGetRange("tinytape_tape_$tape", 0, -1));
+		
+		$r->delete("tinytape_tape_$tape");
+		$r->renameKey("tinytape_tapereorder_$tempid", "tinytape_tape_$tape");
+		
+		//var_dump($r->lGetRange("tinytape_tape_$tape", 0, -1));
+		
+		return new JSONResponse(array("success"=>true));
+		
+	}
+	
 }

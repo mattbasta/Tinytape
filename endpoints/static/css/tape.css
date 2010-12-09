@@ -134,3 +134,7 @@ h1#edit_head {padding-right:1.75em;}
 h1#edit_head:hover {
 	background:rgba(255,255,255,0.15) url(/images/tapepencil.png) no-repeat right center;
 }
+
+.albumscroller img {
+	-moz-transform:scale(1.2,1.2);
+}

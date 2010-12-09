@@ -14,6 +14,7 @@
 	<link type="text/css" rel="stylesheet" href="<?php echo URL_PREFIX; ?>common.css" />
 	<link type="text/css" rel="stylesheet" href="/scripts/fancybox/jquery.fancybox-1.3.1.css" media="screen" />
 	<script src="/scripts/compact.js" type="text/javascript"></script>
+	<script src="/scripts/jquery-ui-1.8.6.custom.min.js" type="text/javascript"></script>
 	<script src="/scripts/jquery.jeditable.min.js" type="text/javascript"></script>
 <?php
 // Effectively view_manager::add_view() in reverse
@@ -34,6 +35,29 @@ $(document).ready(function() {
 	var ehead = document.getElementById("head");
 	$(ehead).editable("<?php echo URL_PREFIX; ?>api/tapes/edit/<?php echo urlencode(view_manager::get_value("ID")); ?>/title", {width:350});
 	ehead.id = "edit_head";
+	<?php if(!view_manager::get_value("SHUFFLE")) { ?>
+	$("#searchlist").sortable({
+		update: function() {
+			var ser = $("#searchlist").sortable('serialize').split("&");
+			var output = {};
+			var c = 0;
+			for(s in ser) {
+				var vals = ser[s].split("=");
+				var reg = player._register[player._register_idpairup[vals[0].substr(0, vals[0].length - 2)]];
+				output[c] = reg.resource.id + "_" + (reg.resource.instance?reg.resource.instance:0);
+				c++;
+			}
+			var j = JSON.stringify(output);
+			$.post(
+				"<?php echo URL_PREFIX; ?>api/tapes/reorder/<?php echo urlencode(view_manager::get_value("ID")); ?>",
+				{order:j},
+				function(data) {
+					
+				}
+			);
+		}
+	});
+	<?php } ?>
 });
 <?php
 }
@@ -78,8 +102,9 @@ $(document).ready(function() {
 		<ul id="searchlist">
 			<?php
 			$json_data = array();
+			$count = 0;
 			foreach($results as $result) {
-				$uid = sha1($result['id'] . $tempsecret);
+				$uid = sha1($result['id'] . $tempsecret) . "_" . $count++;
 				
 				$rtitle = $result['title'] . ' - ' . $result['artist'];
 				$rid = $result['id'];

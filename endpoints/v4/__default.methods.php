@@ -39,8 +39,9 @@ class methods {
 		}
 		
 		$tapes = $db->get_table('tapes');
-		$songs = $db->get_table('songs');
-		$song_refereneces = $db->get_table('song_reference');
+		
+		if(!$r->sContains("tinytape_tapes", $name))
+			return $this->not_found();
 		
 		$tape = $tapes->fetch(
 			array(
@@ -49,46 +50,27 @@ class methods {
 			FETCH_SINGLE_TOKEN
 		);
 		
-		if($tape == false) {
-			// The tape could not be found.
-			
-			return $this->not_found();
-			
-		}
-		
 		view_manager::add_view(VIEW_PREFIX . 'tape');
 		view_manager::set_value('TITLE', $tape->title);
 		view_manager::set_value('ID', $tape->name);
 		view_manager::set_value('OWNER', $tape->user);
 		view_manager::set_value('COLOR', $tape->color);
 		
-		$results = $song_refereneces->fetch(
-			array(
-				'tape_name'=>$name
-			),
-			FETCH_TOKENS,
-			array(
-				'order'=>new listOrder('index','DESC')
-			)
-		);
+		$results = $r->lGetRange("tinytape_tape_$name", 0, -1);
 		
 		$instances = array();
 		if($results !== false) {
 			foreach($results as $result) {
 				
-				$song = $songs->fetch(
-					array(
-						'id'=>$result->song_id
-					),
-					FETCH_SINGLE_TOKEN
-				);
+				$raw_bits = explode("_", $result);
+				$song_id = $raw_bits[0];
 				
 				$instances[] = array(
-					'id'=>$song->id,
-					'title'=>$song->title,
-					'artist'=>$song->artist,
-					'album'=>$song->album,
-					'instance'=>$result->song_instance
+					'id'=>$song_id,
+					"title"=>$r->hGet("tinytape_title", $song_id),
+					"artist"=>$r->hGet("tinytape_artist", $song_id),
+					"album"=>$r->hGet("tinytape_album", $song_id),
+					'instance'=>isset($raw_bits[1])?$raw_bits[1]:0
 				);
 				
 			}
@@ -115,6 +97,7 @@ class methods {
 				
 			}
 			
+			view_manager::set_value('SHUFFLE', true);
 		}
 		
 		view_manager::set_value('INSTANCES', $instances);

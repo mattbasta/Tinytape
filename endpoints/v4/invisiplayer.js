@@ -11,13 +11,17 @@ var player = {
 	},
 	interv : null,
 	repeat:false,
+	_register_idpairup : {},
 	_register : {},
 	_fav_register : {},
 	register : function(reg, song) {
 		player._register[reg] = song;
+		if(reg.indexOf("_") != -1)
+			player._register_idpairup[reg.split("_")[0]] = reg;
 	},
 	register_all : function(data, append) {
 		if(!append) {
+			player._register_idpairup = {};
 			player._register = {};
 			player._fav_register = {};
 		}
