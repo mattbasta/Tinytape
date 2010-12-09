@@ -42,11 +42,11 @@ $(document).ready(function() {
 	$("#my_shoutbox").elastic();
 });
 
-function delete_post(username, type, hash) {
+function delete_post(username, type, hash, alt) {
 	$.getJSON(
 		"/api/feed/delete_item/" + escape(username) + "/" + type + "/" + hash,
 		function(data) {
-			var h = $("#fi_" + hash);
+			var h = $("#fi_" + hash + ",#fi_" + alt);
 			if(data.badge)
 				badge(data.badge);
 			if("deleted" in data) {

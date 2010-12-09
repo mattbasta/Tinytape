@@ -77,9 +77,10 @@ class methods {
 					
 					foreach($items as $item) {
 						$item_hash = md5($item);
+						$alt_hash = md5(uniqid());
 						?>
-						<div class="feed_item searchhistory">
-							<a class="fi_delete" href="#" onclick="return delete_post('<?php echo addslashes(htmlentities($username)); ?>', 'searchhistory', '<?php echo $item_hash; ?>');">Delete</a>
+						<div class="feed_item searchhistory" id="fi_<?php echo $item_hash; ?>">
+							<a class="fi_delete" href="#" onclick="return delete_post('<?php echo addslashes(htmlentities($username)); ?>', 'searchhistory', '<?php echo $item_hash; ?>', '<?php echo $alt_hash; ?>');">Delete</a>
 							<a href="<?php echo URL_PREFIX; ?>search?q=<?php echo urlencode($item); ?>"><?php echo htmlentities($item); ?></a>
 						</div>
 						<?php
@@ -95,8 +96,9 @@ class methods {
 				}
 				break;
 				
-			case "history":
 			case "favorites":
+				$no_favorite = true;
+			case "history":
 				
 				if($type == "history") {
 					$length = 30;
@@ -122,6 +124,7 @@ class methods {
 				// $song_instance_table = $db->get_table("song_instances");
 				
 				$json_data = array();
+				$embeddable = true;
 				
 				echo '<ul class="songlist">';
 				foreach($items as $item) {
@@ -209,7 +212,7 @@ class methods {
 						break;
 					if(md5($item) != $hash)
 						continue;
-					$rem = $r->lRemove($key, $item, 1);
+					$rem = $r->lRemove($key, $item, 0);
 					return new JSONResponse(array(
 						"deleted"=>true,
 						"badge"=>false

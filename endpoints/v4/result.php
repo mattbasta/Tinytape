@@ -27,7 +27,10 @@
 	if($embeddable && $session->logged_in) {
 		?>
 		<div class="embedcontrols">
+			<?php
+			if(!isset($no_favorite) || !$no_favorite) {?>
 			<a href="#" onclick="jQuery.get('<?php echo URL_PREFIX; ?>song/favorite/<?php echo $rid . ((isset($instance_id) && $instance_id != 0) ? "/$instance_id":""); ?>?uid=<?php echo $uid; ?>',function(d){eval(d);});return false;" class="favorite">Favorite</a>
+			<?php } ?>
 			<a href="<?php echo URL_PREFIX; ?>api/tapes/add_to_tape/<?php echo $rid, isset($instance_id)?"/$instance_id":""; ?>" class="addtotape">Add to Tape</a>
 		</div>
 		<?php
