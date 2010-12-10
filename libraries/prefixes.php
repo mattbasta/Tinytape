@@ -1,5 +1,15 @@
 <?php
 
+$db = cloud::create_db(
+	'mysql',
+	array(
+		'username'=>'com_tinytape',
+		'password'=>'RE^@DcH5fZ%6t4g73(9C',
+		'database'=>'tinytape',
+		'server'=>'localhost'
+	)
+);
+
 define("SEARCH_PROVIDER", "sphinx");
 define("ENABLE_FACEBOOK", true);
 define("FB_ID", "192417860416");
@@ -7,6 +17,7 @@ define("FB_SECRET", "364349eb3403b57d60520fa0b76a0e14");
 define("COLOR_REGEX", "/^[0-9A-Za-z]*$/");
 define("TAPE_REGEX", "/^[0-9A-Za-z\\-_]*$/");
 define("EDIT_SONG_MIN_POINTS", 750);
+define("LASTFM_APIKEY", "797d99f7607a8a201decf16c0c3d4f13");
 
 define("THROTTLE_PERHOUR", 50);
 define("THROTTLE_PERHOUR_ENABLE", true);
