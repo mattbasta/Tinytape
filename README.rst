@@ -14,12 +14,12 @@ Setting up the DBs
 
 This is some good times.
 
-# Open `libraries/prefixes.php`
-# Modify the Cloud database instantiation to match your MySQL information
-# Open `libraries/redis.php`
-# Modify the PHPRedis client initialization to match your Redis configuration
-# Open `libraries/sphinx.php`
-# Modify the Sphinx client initialization to match your Sphinx configuration
+#. Open `libraries/prefixes.php`
+#. Modify the Cloud database instantiation to match your MySQL information
+#. Open `libraries/redis.php`
+#. Modify the PHPRedis client initialization to match your Redis configuration
+#. Open `libraries/sphinx.php`
+#. Modify the Sphinx client initialization to match your Sphinx configuration
 
 MySQL
 -----

@@ -56,11 +56,12 @@ class methods {
 		);
 		
 		foreach($tarr as $tape) {
-			$r->delete("tinytape_tape_" . $tape["name"]);
+			//$r->delete("tinytape_tape_" . $tape["name"]);
 			$r->hSet("tinytape_tapeowner", $tape["name"], $tape["user"]);
 			$r->sAdd("tinytape_tapes", $tape["name"]);
 			var_dump($tape);
 			echo "<br />";
+			
 			$refs = $song_refs->fetch(
 				array("tape_name"=>$tape["name"]),
 				FETCH_TOKENS
@@ -69,7 +70,8 @@ class methods {
 				foreach($refs as $ref) {
 					$r_id = "{$ref->song_id}_{$ref->song_instance}";
 					$r->sAdd("tinytape_tapecontents_" . $tape["name"], $r_id);
-					$r->rPush("tinytape_tape_" . $tape["name"], $r_id);
+					$r->sAdd("tinytape_addedtotape_" . $ref->song_id, $tape["name"]);
+					//$r->rPush("tinytape_tape_" . $tape["name"], $r_id);
 				}
 			}
 		}
