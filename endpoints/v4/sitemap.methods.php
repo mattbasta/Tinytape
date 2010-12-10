@@ -65,7 +65,7 @@ class methods {
 			
 			$pages = array();
 			foreach($pages_raw as $page) {
-				$pages[] = "user/$page";
+				$pages[] = "song/view/$page";
 			}
 			
 			view_manager::set_value("PAGES", $pages);
