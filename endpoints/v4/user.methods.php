@@ -62,6 +62,8 @@ class methods {
 		view_manager::set_value("USERNAME", $username);
 		view_manager::set_value("FEED_USERNAME", $username);
 		view_manager::set_value("FEED_TYPE", "feed");
+		view_manager::set_value("USE_TWITTER_@A", true);
+		view_manager::set_value("TWITTER", $r->hGet("tinytape_twitter", $username));
 		view_manager::set_value("FOLLOWING", $r->sContains("tinytape_following_$username", $session->username));
 		view_manager::set_value("MORE_TAPES", count($tapes) == 10);
 		

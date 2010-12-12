@@ -8,6 +8,9 @@
 <script type="text/javascript" src="/scripts/compact.js"></script>
 <script type="text/javascript" src="/scripts/jquery.jeditable.min.js"></script>
 <script type="text/javascript" src="<?php echo URL_PREFIX; ?>invisiplayer.js"></script>
+<?php if(ENABLE_TWITTER && view_manager::get_value("USE_TWITTER_@A")) { ?>
+<script src="http://platform.twitter.com/anywhere.js?id=XEDZzSRYSBVN8Yzv3b9HWg&v=1" type="text/javascript"></script>
+<?php } ?>
 <link type="text/css" rel="stylesheet" href="http://framecdn.serverboy.net/latest.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo URL_PREFIX; ?>common.css" />
 <link type="text/css" rel="stylesheet" href="<?php echo URL_PREFIX; ?>main.css" />

@@ -63,6 +63,23 @@ $level = getLevel($score);
 		?>
 	</section>
 	<div class="clear">&nbsp;</div>
+	<?php if(ENABLE_FACEBOOK || ENABLE_TWITTER) { ?>
+	<section id="my_social">
+		<?php if(ENABLE_TWITTER && view_manager::get_value("TWITTER")) { ?>
+		<div class="twitter">
+			<span id="follow-twitterapi"></span>
+			<script type="text/javascript">
+			<!--
+			twttr.anywhere(function (T) {
+				T('#follow-twitterapi').followButton("<?php echo addslashes(htmlentities(view_manager::get_value("TWITTER"))); ?>");
+			});
+			-->
+			</script>
+		</div>
+		<?php } ?>
+	</section>
+	<div class="clear">&nbsp;</div>
+	<?php } ?>
 	<section id="user_following">
 		<?php
 		$following = view_manager::get_value("FOLLOWING_USERS");

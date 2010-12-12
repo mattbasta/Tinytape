@@ -10,14 +10,25 @@ $db = cloud::create_db(
 	)
 );
 
-define("SEARCH_PROVIDER", "sphinx");
 define("ENABLE_FACEBOOK", true);
+define("ENABLE_TWITTER", true);
+
+define("SEARCH_PROVIDER", "sphinx");
 define("FB_ID", "192417860416");
 define("FB_SECRET", "364349eb3403b57d60520fa0b76a0e14");
+define("LASTFM_APIKEY", "797d99f7607a8a201decf16c0c3d4f13");
+
+define("TWITTER_CONSUMER_KEY", "XEDZzSRYSBVN8Yzv3b9HWg");
+define("TWITTER_CONSUMER_SECRET", "a5WXwtQLCKUVGzCmmbkohcCqRW2aVh3RwQxBfZvsEA");
+define("TWITTER_REQUEST_TOKEN_URL", "http://twitter.com/oauth/request_token");
+define("TWITTER_ACCESS_TOKEN_URL", "http://twitter.com/oauth/access_token");
+define("TWITTER_AUTHORIZE_URL", "http://twitter.com/oauth/authorize");
+
+
+define("MENTION_REGEX", "!(^|\W)@([a-z0-9_]+)!");
 define("COLOR_REGEX", "/^[0-9A-Za-z]*$/");
 define("TAPE_REGEX", "/^[0-9A-Za-z\\-_]*$/");
 define("EDIT_SONG_MIN_POINTS", 750);
-define("LASTFM_APIKEY", "797d99f7607a8a201decf16c0c3d4f13");
 
 define("THROTTLE_PERHOUR", 50);
 define("THROTTLE_PERHOUR_ENABLE", true);
@@ -100,8 +111,22 @@ function shout_process($text, $url_prefix="") {
 		$url_prefix = URL_PREFIX;
 	$text = htmlspecialchars($text);
 	$text = ereg_replace("[[:alpha:]]+://[^<>[:space:]]+[[:alnum:]/]","<a target=\"_blank\" href=\"\\0\">\\0</a>", $text);
-	$text = preg_replace('!(^|\W)@([a-z0-9_]+)!', ' @<a href="' . $url_prefix . 'user/$2">$2</a>', $text);
+	$text = preg_replace(MENTION_REGEX, ' @<a href="' . $url_prefix . 'user/$2">$2</a>', $text);
 	return $text;
+}
+
+function download_oauth($url, $type, $token, $secret) {
+	$oauths = array(
+		"twitter"=>array(
+			"consumer_key"=>TWITTER_CONSUMER_KEY,
+			"consumer_secret"=>TWITTER_CONSUMER_SECRET
+		)
+	);
+	$o = $oauths[$type];
+	$oauthc = new OAuth($o["consumer_key"], $o["consumer_secret"], OAUTH_SIG_METHOD_HMACSHA1, OAUTH_AUTH_TYPE_URI);
+	$oauthc->setToken($token, $secret);
+	$oauthc->fetch($url);
+	return $oauthc->getLastResponse();
 }
 
 $levels = array(

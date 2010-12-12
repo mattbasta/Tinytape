@@ -937,11 +937,14 @@ jquery.autocomplete.css
 	background:url(/images/likeonfb.png) no-repeat top left;
 }
 
-#my_identity #my_has_facebook {
-	width:150px;
+#my_identity #my_has_facebook,
+#my_identity #my_has_twitter {
 	height:50px;
-	margin:15px auto;
-	padding-left:55px;
+	padding:4px 4px 4px 55px;
+	border:1px solid #eee;
+	border-radius:4px;
+	-moz-border-radius:4px;
+	margin-top:-11px;
 }
 #my_identity .profile_pic {
 	float:left;
@@ -951,27 +954,47 @@ jquery.autocomplete.css
 #my_identity strong {
 	font-size:1.5em;
 	font-weight:normal;
-	padding:0.75em 5px;
+	padding:0.3em 5px;
 	display:block;
 }
+
+#my_identity {padding-bottom:15px;}
+#container #soc_fbwrap, #container #soc_twwrap {
+	width:35%;
+	margin-left:0;
+}
+
+#my_identity .connect_on_tw,
 #my_identity .connect_on_fb {
-	width:200px;
-	height:35px;
-	margin:15px auto;
 	display:block;
+	height:35px;
 	text-indent:-10000px;
-	background:#3b5998 url(/images/connectonfb.png) no-repeat center center;
-	border:1px solid #264586;
 	border-radius:5px;
 	-moz-border-radius:5px;
 	box-shadow:0 0 4px #666;
 	-moz-box-shadow:0 0 8px #666;
 	-webkit-box-shadow:0 0 4px #666;
 }
+#my_identity .connect_on_fb {
+	background:#3b5998 url(/images/connectonfb.png) no-repeat center center;
+	border:1px solid #264586;
+}
+#my_identity .connect_on_tw {
+	background:#AFEAEE url(/images/connectontw.png) no-repeat center center;
+	border:1px solid #2285bd;
+}
+#my_has_twitter small {
+	display:block;
+	float:left;
+	padding-left:0.6em;
+	font-size:0.85em
+}
 
+#my_shout_posttw,
 #my_shout_postfb {
 	float:left;
-	width:200px;
+	clear:none;
+	width:150px;
 	margin-bottom:-3em;
 	padding:1em 0.5em;
 }
@@ -1065,3 +1088,5 @@ jquery.autocomplete.css
 	-webkit-transform:scale(1.2,1.2);
 	-o-transform:scale(1.2,1.2);
 }
+
+#my_social {text-align:center;}

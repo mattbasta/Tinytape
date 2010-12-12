@@ -9,9 +9,11 @@
 <div class="clear"></div>
 <div class="g7">
 	<?php
-	if(ENABLE_FACEBOOK) {
+	if(ENABLE_FACEBOOK || ENABLE_TWITTER) {
 	?>
 	<div id="my_identity">
+		<?php if(ENABLE_FACEBOOK) { ?>
+		<div id="soc_fbwrap" class="gthird">
 		<?php
 		if(view_manager::get_value("FACEBOOK")) {
 			?>
@@ -26,6 +28,30 @@
 			<?php
 		}
 		?>
+			<div class="clear"></div>
+		</div>
+		<?php }
+		if(ENABLE_TWITTER) { ?>
+		<div id="soc_twwrap" class="gthird">
+		<?php
+		if(view_manager::get_value("TWITTER")) {
+			?>
+			<div id="my_has_twitter">
+				<img src="<?php echo view_manager::get_value("TW_AVATAR"); ?>" alt="" class="profile_pic" />
+				<strong>@<?php echo view_manager::get_value("TW_SN"); ?></strong>
+				<small><?php echo view_manager::get_value("TW_NAME"); ?></small>
+			</div>
+			<?php
+		} else {
+			?>
+			<a href="<?php echo URL_PREFIX ?>account/twredir" class="connect_on_tw" id="twconnect">Connect on Twitter</a>
+			<?php
+		}
+		?>
+			<div class="clear"></div>
+		</div>
+		<?php } ?>
+		<div class="clear"></div>
 	</div>
 	<?php
 	}
@@ -46,6 +72,12 @@
 		<label id="my_shout_postfb">
 			<input checked type="checkbox" name="dofb" value="true" />
 			<span>Post to Facebook</span>
+		</label>
+		<?php }
+		if(ENABLE_TWITTER && view_manager::get_value("TWITTER")) { ?>
+		<label id="my_shout_posttw">
+			<input checked type="checkbox" name="dotw" value="true" />
+			<span>Post to Twitter</span>
 		</label>
 		<?php } ?>
 		<p class="buttons">
@@ -115,7 +147,7 @@
 				?><a id="my_allfollowing" href="<?php echo URL_PREFIX; ?>api/ajax/following/<?php echo urlencode($username); ?>" class="fancybox">Everybody you follow</a><?php
 			}
 		} else {
-			?><p><?php echo htmlentities($username); ?> is not following anybody.</p><?php
+			?><p>You are not following anybody.</p><?php
 		}
 		?>
 	</section>

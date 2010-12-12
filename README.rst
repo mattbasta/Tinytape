@@ -56,3 +56,21 @@ no other configuration necessary.
 
 # TODO : Post a config file
 
+
+Prerequirements
+===============
+
+Twitter
+-------
+
+To enable Twitter support, you need to have PCRE installed: ::
+
+    apt-get install libpcre3-dev
+
+PECL
+----
+
+There are a bunch of PECL extensions you should have:
+
+- OAuth
+- Sphinx
