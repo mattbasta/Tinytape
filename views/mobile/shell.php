@@ -4,9 +4,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
 <title>Tinytape Mobile</title>
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0a1/jquery.mobile-1.0a1.min.css" type="text/css" />
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0a2/jquery.mobile-1.0a2.min.css" type="text/css" />
 <script src="http://code.jquery.com/jquery-1.4.3.min.js"></script>
-<script src="http://code.jquery.com/mobile/1.0a1/jquery.mobile-1.0a1.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.0a2/jquery.mobile-1.0a2.min.js"></script>
 <script type="text/javascript" src="<?php echo URL_PREFIX; ?>invisiplayer.js"></script>
 <script type="text/javascript"> 
 <!--
