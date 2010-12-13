@@ -115,7 +115,7 @@ function shout_process($text, $url_prefix="") {
 	return $text;
 }
 
-function download_oauth($url, $type, $token, $secret) {
+function download_oauth($url, $type, $token, $secret, $args=null) {
 	$oauths = array(
 		"twitter"=>array(
 			"consumer_key"=>TWITTER_CONSUMER_KEY,
@@ -125,7 +125,10 @@ function download_oauth($url, $type, $token, $secret) {
 	$o = $oauths[$type];
 	$oauthc = new OAuth($o["consumer_key"], $o["consumer_secret"], OAUTH_SIG_METHOD_HMACSHA1, OAUTH_AUTH_TYPE_URI);
 	$oauthc->setToken($token, $secret);
-	$oauthc->fetch($url);
+	if($args)
+		$oauth->fetch($url, $args, OAUTH_HTTP_METHOD_POST);
+	else
+		$oauthc->fetch($url);
 	return $oauthc->getLastResponse();
 }
 
