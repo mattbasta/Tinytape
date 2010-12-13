@@ -21,6 +21,7 @@ class methods {
 				"metadata"=>array(
 					"title"=>$r->hGet("tinytape_title", $hist),
 					"artist"=>$r->hGet("tinytape_artist", $hist),
+					"album"=>$r->hGet("tinytape_album", $hist)
 				)
 			);
 		}

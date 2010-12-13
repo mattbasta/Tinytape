@@ -353,6 +353,12 @@ jquery.autocomplete.css
 	-webkit-transform:scale(1);
 	-o-transform:scale(1);
 }
+#homehistory a canvas.home_willplay:hover {
+	transform:scale(1.05);
+	-moz-transform:scale(1.05);
+	-webkit-transform:scale(1.05);
+	-o-transform:scale(1.05);
+}
 #historymeta {
 	display:block;
 	position:relative;
@@ -361,13 +367,20 @@ jquery.autocomplete.css
 	margin:0 auto;
 	text-align:center;
 }
-#historymeta span {
+#historymeta a.meta {
 	display:block;
 	font-size:1.3em;
 	padding-bottom:0.5em;
+	text-decoration:none;
+	color:#222;
 }
-#historymeta #meta_title {font-size:1.5em;}
-#historymeta a {
+#historymeta a.meta:hover {text-decoration:underline;}
+#historymeta #meta_title {
+	font-size:1.5em;
+	font-weight:bold;
+}
+#historymeta a.previous,
+#historymeta a.next {
 	position:absolute;
 	bottom:1.2em;
 	display:block;

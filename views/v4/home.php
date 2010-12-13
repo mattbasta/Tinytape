@@ -23,8 +23,8 @@ $albumartreg = array();
 	<div id="historymeta">
 		<a href="#" onclick="hh.style.left=(hh.offsetLeft+360)+'px';return false;" class="previous">Previous</a>
 		<a href="#" onclick="hh.style.left=(hh.offsetLeft-360)+'px';return false;" class="next">Next</a>
-		<span id="meta_title"></span>
-		<span id="meta_artist"></span>
+		<a class="meta" id="meta_title"></a>
+		<a class="meta" id="meta_artist"></a>
 	</div>
 	<div id="historyhardware">
 		<div id="hardware_global"></div>
@@ -33,7 +33,6 @@ $albumartreg = array();
 </div>
 <script type="text/javascript">
 <!--
-var mustload = <?php echo count($albumartreg); ?>;
 var hh = document.getElementById("homehistory");
 var canvases = hh.getElementsByTagName("canvas");
 var redrawhome = function(){
@@ -49,6 +48,12 @@ $(document).ready(function(){
 		?>albumart("<?php echo $uid; ?>", <?php echo json_encode($hist); ?>);<?php
 	}
 	?>
+	var halfcount = Math.floor(canvases.length / 2);
+	while(canvases[halfcount].style.display == "none")
+		halfcount++;
+	doplay(canvases[halfcount].id, true);
+	if($.browser.webkit)
+		setTimeout(redrawhome, 1000);
 });
 $(window).resize(redrawhome);
 function doplay(uid, dontplay) {
@@ -66,27 +71,23 @@ function doplay(uid, dontplay) {
 	var toplay = document.getElementById(uid);
 	toplay.className = "home_willplay";
 	hh.style.left = -1 * (pos * 120 - ow / 2 + 90) + "px";
-	$("#meta_title").html(player._register[uid].metadata.title);
-	$("#meta_artist").html(player._register[uid].metadata.artist);
-	if(!dontplay) {
+	
+	var m_title = document.getElementById("meta_title");
+	m_title.href = "<?php echo URL_PREFIX; ?>song/view/" + player._register[uid].resource.id;
+	$(m_title).html(player._register[uid].metadata.title);
+	
+	var m_artist = document.getElementById("meta_artist"),
+	    artist = player._register[uid].metadata.artist;
+	m_artist.href = "<?php echo URL_PREFIX; ?>song/artist/" + escape(artist);
+	$("#meta_artist").html(artist);
+	
+	if(!dontplay)
 		player.start(uid);
-	}
-}
-function didload() {
-	mustload--;
-	if(mustload == 0) {
-		// Set up for playing
-		var halfcount = Math.round(canvases.length / 2);
-		while(canvases[halfcount].style.display == "none")
-			halfcount++;
-		doplay(canvases[halfcount].id, true);
-	}
 }
 function loadart(euid, image) {
 	var context = euid.getContext("2d");
 	//context.fillText(image, 0, 10, 120);
 	if(image == "") {
-		didload();
 		delete player._register[euid.id];
 		return euid.style.display = "none";
 	}
@@ -95,28 +96,26 @@ function loadart(euid, image) {
 		context.fillStyle = "red";
 		context.fillRect(0, 0, 120, 120);
 		context.drawImage(img, 0, 0, 120, 120);
-		didload();
-	};
+	};/*
 	img.onerror = function() {
 		euid.style.display = "none";
 		delete player._register[euid.id];
-		didload();
-	};
+	};*/
 	img.src = image;
 }
 function albumart(uid, data) {
 	player.register(uid, data);
 	var euid = document.getElementById(uid);
-	var key = "2:albumart:" + data.metadata.title + data.metadata.artist;
+	var key = "4:albumart:" + data.metadata.title + data.metadata.artist;
 	if("localStorage" in window && key in window.localStorage) {
 		loadart(euid, window.localStorage[key]);
 		return;
 	}
 	jQuery.getJSON(
-		"<?php echo URL_PREFIX; ?>api/albumart?title=" + escape(data.metadata.title) + "&artist=" + escape(data.metadata.artist) + "&size=extralarge",
+		"<?php echo URL_PREFIX; ?>api/albumart?artist=" + escape(data.metadata.artist) + (data.metadata.album?("&album=" + escape(data.metadata.album)):("&title=" + escape(data.metadata.title))) + "&size=extralarge",
 		function(aadata) {
 			if(aadata.error)
-				return didload();
+				return loadart(euid, "/images/noart.jpg");
 			if("localStorage" in window) {
 				window.localStorage[key] = aadata.image;
 			}
