@@ -664,7 +664,8 @@ class methods {
 					$songs[] = array(
 						"id"=>$raw,
 						"title"=>$r->hGet("tinytape_title", $raw),
-						"artist"=>$r->hGet("tinytape_artist", $raw)
+						"artist"=>$r->hGet("tinytape_artist", $raw),
+						"album"=>$r->hGet("tinytape_album", $raw)
 					);
 					
 				}
