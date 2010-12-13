@@ -93,6 +93,9 @@ class methods {
 		if(empty($id) || empty($_GET["uid"]))
 			return false;
 		
+		if(!$session->logged_in)
+			return false;
+		
 		$username = $session->username;
 		
 		$fid = (int)$id . (empty($instance)?"":("_".(int)$instance));
