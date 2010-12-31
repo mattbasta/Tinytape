@@ -4,6 +4,7 @@ $score = view_manager::get_value("SCORE");
 $level = getLevel($score);
 ?>
 <div class="g7">
+	<h1 id="user_name"><?php echo htmlentities($username); ?>'s Profile</h1>
 	<div id="user_points">
 		<span class="score"><b><?php echo $score; ?></b> points</span>
 		<span class="level">level <b><?php echo $level; ?></b></span>
@@ -30,6 +31,9 @@ $level = getLevel($score);
 	</section>
 </div>
 <div class="g5" id="tapelist">
+	<?php
+	if(view_manager::get_value("LOGGED_IN")) {
+	?>
 	<div id="user_follow">
 		<?php
 		if(!view_manager::get_value("FOLLOWING")) {
@@ -43,6 +47,9 @@ $level = getLevel($score);
 		}
 		?>
 	</div>
+	<?php
+	}
+	?>
 	<section id="my_badges">
 		<?php
 		$tt_badges = view_manager::get_value("TTBADGES");

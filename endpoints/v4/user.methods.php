@@ -4,16 +4,17 @@ class methods {
 	public function __default($username="") {
 		global $db, $session, $r, $tt_badges, $keyval;
 		
+		/*
 		if(!$session->logged_in) {
 			header("Location: " . URL_PREFIX . "login?redirect=" . URL_PREFIX . "user/" . urlencode($username));
 			return false;
-		}
+		}*/
 		
 		if(empty($username) || !user_exists($username)) {
 			return $this->not_found();
 		}
 		
-		if($session->username == $username) {
+		if($session->logged_in && $session->username == $username) {
 			header("Location: " . URL_PREFIX . "account");
 			return false;
 		}
@@ -64,7 +65,9 @@ class methods {
 		view_manager::set_value("FEED_TYPE", "feed");
 		view_manager::set_value("USE_TWITTER_@A", true);
 		view_manager::set_value("TWITTER", $r->hGet("tinytape_twitter", $username));
-		view_manager::set_value("FOLLOWING", $r->sContains("tinytape_following_$username", $session->username));
+		view_manager::set_value("LOGGED_IN", $session->logged_in);
+		if($session->logged_in)
+			view_manager::set_value("FOLLOWING", $r->sContains("tinytape_following_$username", $session->username));
 		view_manager::set_value("MORE_TAPES", count($tapes) == 10);
 		
 		return view_manager::render_as_httpresponse();

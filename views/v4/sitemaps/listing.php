@@ -8,4 +8,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
    <sitemap>
       <loc>http://tinytape.com/sitemap/songs</loc>
    </sitemap>
+   <sitemap>
+      <loc>http://tinytape.com/sitemap/users</loc>
+   </sitemap>
 </sitemapindex>

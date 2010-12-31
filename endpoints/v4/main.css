@@ -1103,3 +1103,17 @@ jquery.autocomplete.css
 }
 
 #my_social {text-align:center;}
+
+#song_link {
+	text-align:center;
+	padding:7px;
+}
+#song_link input {text-align:center;}
+
+h1#user_name {
+	display:block;
+	text-align:center;
+	font-size:1.5em;
+	position:relative;
+	top:10px;
+}

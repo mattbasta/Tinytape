@@ -8,8 +8,10 @@ class methods {
 		if(!user_exists($username))
 			return false;
 		
+		/*
 		if(!$session->logged_in)
 			return false;
+		*/
 		
 		$offset = (int)$offset;
 		
@@ -116,7 +118,7 @@ class methods {
 				}
 				
 				
-				if($type == "history" && $username == $session->username)
+				if($type == "history" && $session->logged_in && $username == $session->username)
 					clearhistory($type, $username);
 				
 				$song_table = $db->get_table("songs");

@@ -31,7 +31,7 @@ switch($fi["version"]) {
 				$count = $fi["payload"]["song_count"] - $fi["payload"]["song_count"] % 5;
 				foreach($fi["payload"]["songs"] as $song) {
 				?>
-				<a href="<?php echo URL_PREFIX; ?>song/view/<?php echo $song["id"]; ?>">
+				<a href="<?php echo URL_PREFIX; ?>song/view/<?php echo $song["id"]; ?>" title="<?php echo $song["title"]; ?>">
 					<img src="<?php echo URL_PREFIX; ?>api/albumart/redirect?<?php if(empty($song["album"])) { ?>title=<?php echo urlencode($song["title"]); } else { ?>album=<?php echo urlencode($song["album"]); } ?>&amp;artist=<?php echo urlencode($song["artist"]); ?>&amp;size=large" alt="<?php echo htmlspecialchars($song["title"]); ?>" height="90" width="90" />
 				</a> 
 				<?php
