@@ -157,11 +157,18 @@ class methods {
 		
 		view_manager::set_value('RESULTS', $result);
 		
-		if($session->logged_in)
+		if($session->logged_in) {
 			$r->lPush("tinytape_searchhistory_" . $session->username, $term);
+			$r->zIncrBy(REDIS_PREFIX . NOW_YEAR . "_searches_" . $session->username, 1, $term);
+			$r->zIncrBy(REDIS_PREFIX . NOW_MONTH . "_searches_" . $session->username, 1, $term);
+		}
+		
 		
 		$r->lPush("tinytape_searchhistory", $term);
 		$r->zIncrBy("tinytape_searchtally", 1, $term);
+		$r->zIncrBy(REDIS_PREFIX . NOW_YEAR . "_searches", 1, $term);
+		$r->zIncrBy(REDIS_PREFIX . NOW_MONTH . "_searches", 1, $term);
+		$r->zIncrBy(REDIS_PREFIX . NOW_WEEK . "_searches", 1, $term);
 		
 		view_manager::set_value("TITLE", $term . " - Tinytape");
 		
