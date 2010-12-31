@@ -37,6 +37,9 @@ echo view_manager::render();
 			<div id="hardware_global"></div>
 			<div id="playbar_global"></div>
 		</div>
+		<div id="song_link">
+			<input type="text" value="http://tinyta.pe/s<?php echo encode_id(view_manager::get_value("ID")); ?>" />
+		</div>
 		<div class="no_results">
 			<p>Uh-oh. Looks like there aren't any copies of <?php echo htmlentities(view_manager::get_value('TITLE')); ?> registered in the system. No love for <?php echo htmlentities(view_manager::get_value('ARTIST')); ?>.</p>
 		</div>
@@ -49,6 +52,9 @@ echo view_manager::render();
 			$do_play = current($results);
 			echo sha1($do_play["service_resource"] . $tempsecret);
 			?>');">play</a>)
+		</div>
+		<div id="song_link">
+			<input type="text" value="http://tinyta.pe/s<?php echo encode_id(view_manager::get_value("ID")); ?>" />
 		</div>
 		<div class="no_results scrappy">
 			<p>Sometimes we don't have a great copy of the song. <a href="<?php echo URL_PREFIX; ?>song/search/<?php echo view_manager::get_value('ID'); ?>">Help yourself to a new copy</a> if you're not satisfied.</p>

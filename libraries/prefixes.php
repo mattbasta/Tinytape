@@ -132,6 +132,26 @@ function download_oauth($url, $type, $token, $secret, $args=null) {
 	return $oauthc->getLastResponse();
 }
 
+function encode_id($id) {
+	$id = (int)$id;
+	$out = "";
+	
+	while($id > 0) {
+		$char = $id % 62;
+		$id -= $char;
+		$id /= 62;
+		
+		$char += 55;
+		if($char < 65) $char -= 7;
+		elseif($char > 90) $char += 6;
+		$out = chr($char) . $out;
+		
+	}
+	
+	return $out;
+	
+}
+
 $levels = array(
 	2=>50,
 	3=>125,
