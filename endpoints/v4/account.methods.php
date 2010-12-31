@@ -186,6 +186,8 @@ class methods {
 			$user = $matches[0];
 			if(user_exists($user) && $sn = $r->hGet("tinytape_twitter", $user)) {
 				$user = "@$sn";
+			} else {
+				$user = "(t)$user";
 			}
 			return $user;
 		}
