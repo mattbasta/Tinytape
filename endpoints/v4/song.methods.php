@@ -70,14 +70,14 @@ class methods {
 				)
 			);
 			
-			$r->zIncrBy("tinytape_scores", 10, $session->username);
-			$r->zIncrBy("tinytape_createcount", 1, $session->username);
-			$r->hSet("tinytape_songcreatedby", $id, $session->username);
-			$r->hSet("tinytape_title", $id, $_REQUEST["track"]);
-			$r->hSet("tinytape_artist", $id, $_REQUEST["artist"]);
-			$r->hSet("tinytape_album", $id, $_REQUEST["album"]);
+			$r->zIncrBy(REDIS_PREFIX . "scores", 10, $session->username);
+			$r->zIncrBy(REDIS_PREFIX . "createcount", 1, $session->username);
+			$r->hSet(REDIS_PREFIX . "songcreatedby", $id, $session->username);
+			$r->hSet(REDIS_PREFIX . "title", $id, $_REQUEST["track"]);
+			$r->hSet(REDIS_PREFIX . "artist", $id, $_REQUEST["artist"]);
+			$r->hSet(REDIS_PREFIX . "album", $id, $_REQUEST["album"]);
 			
-			$r->sAdd("tinytape_songs", $id);
+			$r->sAdd(REDIS_PREFIX . "songs", $id);
 			
 			header('Location: ' . URL_PREFIX . "song/search/$id?bonus");
 			
@@ -106,19 +106,19 @@ class methods {
 		
 		if($r->sContains($fkey, $fid)) {
 			$r->sRemove($fkey, $fid);
-			$r->sRemove("tinytape_favorited_" . $id, $username);
-			$r->zIncrBy("tinytape_favorited", -1, $id);
-			$r->zIncrBy("tinytape_favorites", -1, $username);
+			$r->sRemove(REDIS_PREFIX . "favorited_" . $id, $username);
+			$r->zIncrBy(REDIS_PREFIX . "favorited", -1, $id);
+			$r->zIncrBy(REDIS_PREFIX . "favorites", -1, $username);
 			
 			return new HttpResponse("un_favorite('$uid');");
 		} else {
 			$r->sAdd($fkey, $fid);
-			$r->sAdd("tinytape_favorited_" . $id, $username);
-			$r->zIncrBy("tinytape_favorited", 1, $id);
-			$r->zIncrBy("tinytape_favorites", 1, $username);
+			$r->sAdd(REDIS_PREFIX . "favorited_" . $id, $username);
+			$r->zIncrBy(REDIS_PREFIX . "favorited", 1, $id);
+			$r->zIncrBy(REDIS_PREFIX . "favorites", 1, $username);
 			
-			if(!$r->sContains("tinytape_badges_$username", "opinionated") &&
-			   $r->zScore("tinytape_favorites", $username) >= 20) {
+			if(!$r->sContains(REDIS_PREFIX . "badges_$username", "opinionated") &&
+			   $r->zScore(REDIS_PREFIX . "favorites", $username) >= 20) {
 				
 				bless_badge("opinionated");
 				
@@ -200,7 +200,7 @@ class methods {
 	public function random() {
 		global $r;
 		
-		$id = $r->sRandMember("tinytape_songs");
+		$id = $r->sRandMember(REDIS_PREFIX . "songs");
 		
 		header("Location: " . URL_PREFIX . "song/view/" . $id);
 		
@@ -410,18 +410,18 @@ class methods {
 		
 		$r_id = "{$song}_$instance";
 		
-		if(!$r->sContains("tinytape_tapes", $tape))
+		if(!$r->sContains(REDIS_PREFIX . "tapes", $tape))
 			return new HttpResponse("No such tape");
-		if(!$r->sContains("tinytape_songs", $song))
+		if(!$r->sContains(REDIS_PREFIX . "songs", $song))
 			return new HttpResponse("No such song");
-		if($r->hGet("tinytape_tapeowner", $tape) != $session->username) {
-			return new HttpResponse("Access denied: " . $r->hGet("tinytape_tapeowner", $tape));
+		if($r->hGet(REDIS_PREFIX . "tapeowner", $tape) != $session->username) {
+			return new HttpResponse("Access denied: " . $r->hGet(REDIS_PREFIX . "tapeowner", $tape));
 		}
 		
 		view_manager::set_value("URL_ID", $song . "/" . $instance);
 		view_manager::set_value("TAPE", $tape);
 		
-		if($r->sContains("tinytape_tapecontents_$tape", $r_id)) {
+		if($r->sContains(REDIS_PREFIX . "tapecontents_$tape", $r_id)) {
 			view_manager::add_view(VIEW_PREFIX . "tapes/alreadyexists");
 			return view_manager::render_as_httpresponse();
 		}
@@ -436,30 +436,30 @@ class methods {
 				"song_instance"=>$instance
 			)
 		);
-		$r->sAdd("tinytape_tapecontents_$tape", $r_id);
-		$r->rPush("tinytape_tape_$tape", $r_id);
-		$r->zIncrBy("tinytape_addedtotape", 1, $song);
-		$r->zIncrBy("tinytape_addedsongstotape", 1, $session->username);
-		$r->zIncrBy("tinytape_scores", 1, $session->username);
+		$r->sAdd(REDIS_PREFIX . "tapecontents_$tape", $r_id);
+		$r->rPush(REDIS_PREFIX . "tape_$tape", $r_id);
+		$r->zIncrBy(REDIS_PREFIX . "addedtotape", 1, $song);
+		$r->zIncrBy(REDIS_PREFIX . "addedsongstotape", 1, $session->username);
+		$r->zIncrBy(REDIS_PREFIX . "scores", 1, $session->username);
 		
-		$unclaimed_badges = $r->sDiff("tinytape_badgesets", "tinytape_badges_" . $session->username);
+		$unclaimed_badges = $r->sDiff(REDIS_PREFIX . "badgesets", "tinytape_badges_" . $session->username);
 		
-		$songs = $r->sMembers("tinytape_tapecontents_$tape");
+		$songs = $r->sMembers(REDIS_PREFIX . "tapecontents_$tape");
 		$num_songs = count($songs);
 		foreach($unclaimed_badges as $badge) {
 			// We're going to assume that every song already in the tape has been through this same process
-			if(!$r->sContains("tinytape_badgeset_$badge", $song))
+			if(!$r->sContains(REDIS_PREFIX . "badgeset_$badge", $song))
 				continue;
 			
-			$required_songs = (int)$r->hGet("tinytape_badgesets_required", $badge);
+			$required_songs = (int)$r->hGet(REDIS_PREFIX . "badgesets_required", $badge);
 			
 			if($required_songs <= $num_songs) { // Should we even look further?
-				$badge_songs = $r->sMembers("tinytape_badgesets_$badge");
+				$badge_songs = $r->sMembers(REDIS_PREFIX . "badgesets_$badge");
 				$acquired_songs = 0;
 				foreach($songs as $song) {
 					if(($spos = strpos($song, "_")) !== false)
 						$song = substr($song, 0, $spos);
-					if($r->sContains("tinytape_badgeset_$badge", $song)) {
+					if($r->sContains(REDIS_PREFIX . "badgeset_$badge", $song)) {
 						$acquired_songs++;
 						if($acquired_songs >= $required_songs)
 							break;
@@ -520,15 +520,15 @@ class methods {
 		$service = "youtube";
 		
 		$resource_id = "$service:$resource";
-		if($r->sContains("tinytape_instances_$id", $resource_id)) {
+		if($r->sContains(REDIS_PREFIX . "instances_$id", $resource_id)) {
 			return new JSONResponse(array(
-				"instance"=>$r->hGet("tinytape_resourceref_$id", $resource_id),
+				"instance"=>$r->hGet(REDIS_PREFIX . "resourceref_$id", $resource_id),
 				"badge"=>false,
 				"points"=>false
 			));
 		}
 		
-		$r->sAdd("tinytape_instances_$id", $resource_id);
+		$r->sAdd(REDIS_PREFIX . "instances_$id", $resource_id);
 		
 		//////
 		$p_live = isset($_POST['live']);
@@ -557,12 +557,12 @@ class methods {
 				'remix_artist'=>$p_remix_artist
 			)
 		);
-		$r->hSet("tinytape_resourceref_$id", $resource_id, $instance);
+		$r->hSet(REDIS_PREFIX . "resourceref_$id", $resource_id, $instance);
 		
 		$score = 1;
-		$r->zIncrBy("tinytape_bestmatch_$id", $score, $instance);
+		$r->zIncrBy(REDIS_PREFIX . "bestmatch_$id", $score, $instance);
 		
-		$points = $r->zIncrBy("tinytape_scores", 3, $session->username);
+		$points = $r->zIncrBy(REDIS_PREFIX . "scores", 3, $session->username);
 		
 		return new JSONResponse(array(
 			"instance"=>$instance,
@@ -577,7 +577,7 @@ class methods {
 		view_manager::add_view(VIEW_PREFIX . "shell");
 		view_manager::add_view(VIEW_PREFIX . "not_found");
 		
-		if($session->logged_in && !$r->sContains("tinytape_badges_" . $session->username, "cluso")) {
+		if($session->logged_in && !$r->sContains(REDIS_PREFIX . "badges_" . $session->username, "cluso")) {
 			bless_badge("cluso");
 			view_manager::set_value("BADGE", true);
 		}
@@ -594,13 +594,10 @@ class methods {
 			
 			if(THROTTLE_DUPLICATE_ENABLE) {
 				# No double dipping throttling
-				$last_song_played = $r->lGet("tinytape_history_$username", 0);
+				$last_song_played = $r->lGet(REDIS_PREFIX . "history_$username", 0);
 				if($last_song_played == $id)
 					return false;
 			}
-			
-			$r->lPush("tinytape_history_$username", $id);
-			$r->lPush("tinytape_history", $id);
 			
 			if(THROTTLE_PERHOUR_ENABLE) {
 				# 50 songs in an hour throttling
@@ -612,27 +609,43 @@ class methods {
 					$r->expire($rsongc_key, 3600); // Make the key go away in an hour or so
 			}
 			
+			$r->lPush(REDIS_PREFIX . "history_$username", $id);
+			$r->lPush(REDIS_PREFIX . "history", $id);
+			$r->zIncrBy(REDIS_PREFIX . NOW_YEAR . "_played", 1, $id);
+			$r->zIncrBy(REDIS_PREFIX . NOW_YEAR . "_played_" . $username, 1, $id);
+			$r->zIncrBy(REDIS_PREFIX . NOW_MONTH . "_played", 1, $id);
+			$r->zIncrBy(REDIS_PREFIX . NOW_MONTH . "_played_" . $username, 1, $id);
+			$r->zIncrBy(REDIS_PREFIX . NOW_WEEK . "_played", 1, $id);
+			$r->zIncrBy(REDIS_PREFIX . NOW_WEEK . "_played_" . $username, 1, $id);
+			$r->zIncrBy(REDIS_PREFIX . NOW_DAY . "_played", 1, $id);
+			$r->zIncrBy(REDIS_PREFIX . NOW_DAY . "_played_" . $username, 1, $id);
+			
+			$r->zIncrBy(REDIS_PREFIX . "stats_plays_year", 1, NOW_YEAR);
+			$r->zIncrBy(REDIS_PREFIX . "stats_plays_month", 1, NOW_MONTH);
+			$r->zIncrBy(REDIS_PREFIX . "stats_plays_week", 1, NOW_WEEK);
+			$r->zIncrBy(REDIS_PREFIX . "stats_plays_day", 1, NOW_DAY);
+			
 			$session->song_count++;
 			
-			//$r->hIncrBy("tinytape_scores", $username, 1);
-			$this->score = $r->zIncrBy("tinytape_scores", 1, $username);
+			//$r->hIncrBy(REDIS_PREFIX . "scores", $username, 1);
+			$this->score = $r->zIncrBy(REDIS_PREFIX . "scores", 1, $username);
 			
-			$r->zIncrBy("tinytape_playcounts_$username", 1, $id);
-			$r->zIncrBy("tinytape_playcounts", 1, $username);
+			$r->zIncrBy(REDIS_PREFIX . "playcounts_$username", 1, $id);
+			$r->zIncrBy(REDIS_PREFIX . "playcounts", 1, $username);
 			
-			$r->zIncrBy("tinytape_songplays", 1, $id);
-			$r->zIncrBy("tinytape_songplays_" . $id, 1, $username);
+			$r->zIncrBy(REDIS_PREFIX . "songplays", 1, $id);
+			$r->zIncrBy(REDIS_PREFIX . "songplays_" . $id, 1, $username);
 			
 			$badge_set = "tinytape_badges_$username";
 			
 			if(!$r->sContains($badge_set, "zombie") &&
-			   $r->zRangeByScore("tinytape_playcounts_$username", 100, "+inf", array("limit"=>array(0,1)))) {
+			   $r->zRangeByScore(REDIS_PREFIX . "playcounts_$username", 100, "+inf", array("limit"=>array(0,1)))) {
 				
 				bless_badge("zombie");
 				return $tt_badges["zombie"];
 			}
 			
-			$history_count = $r->sSize("tinytape_history_$username");
+			$history_count = $r->sSize(REDIS_PREFIX . "history_$username");
 			
 			if(!$r->sContains($badge_set, "enthusiast") &&
 			   $history_count == 1000) {
@@ -656,16 +669,16 @@ class methods {
 			if($history_count % 15 == 0 && $session->song_count != false) {
 				
 				$song_count = max(5, min($session->song_count, 15));
-				$songs_raw = $r->lGetRange("tinytape_history_$username", 0, $song_count);
+				$songs_raw = $r->lGetRange(REDIS_PREFIX . "history_$username", 0, $song_count);
 				$songs = array();
 				
 				foreach($songs_raw as $raw) {
 					
 					$songs[] = array(
 						"id"=>$raw,
-						"title"=>$r->hGet("tinytape_title", $raw),
-						"artist"=>$r->hGet("tinytape_artist", $raw),
-						"album"=>$r->hGet("tinytape_album", $raw)
+						"title"=>$r->hGet(REDIS_PREFIX . "title", $raw),
+						"artist"=>$r->hGet(REDIS_PREFIX . "artist", $raw),
+						"album"=>$r->hGet(REDIS_PREFIX . "album", $raw)
 					);
 					
 				}
@@ -682,8 +695,8 @@ class methods {
 				);
 				
 				push_to_follower_feeds($post, $username);
-				push_to_feed("tinytape_feed_$username", $post);
-				//push_to_feed("tinytape_fullfeed_$username", $post);
+				push_to_feed(REDIS_PREFIX . "feed_$username", $post);
+				//push_to_feed(REDIS_PREFIX . "fullfeed_$username", $post);
 				
 				$session->song_count = false;
 				
