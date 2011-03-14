@@ -130,6 +130,8 @@ class methods {
 					$error .= '-plen';
 				if($session->captcha != $_REQUEST['math'])
 					$error .= '-captcha';
+				if($_REQUEST['privacy'] != "coolbeans")
+					$error .= '-fool';
 				
 				if(!empty($error)) {
 					header('Location: ' . URL_PREFIX . 'login/signup?invalid=' . $error);

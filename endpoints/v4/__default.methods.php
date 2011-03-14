@@ -107,6 +107,12 @@ class methods {
 		
 	}
 	
+	public function privacy() {
+		view_manager::add_view(VIEW_PREFIX . "shell");
+		view_manager::add_view(VIEW_PREFIX . "privacy");
+		return view_manager::render_as_httpresponse();
+	}
+	
 	public function search() {
 		global $session, $r, $db, $sphinx;
 		

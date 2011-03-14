@@ -103,6 +103,12 @@ footer a {color:#bcbcbc;}
 	line-height:2em;
 	padding-right:1em;
 }
+#signupform label.checkbox {
+	width:300px;
+	padding:0 0 0 20px;
+	text-align:left;
+}
+#signupform label.checkbox input {height:2.5em;}
 #newtapeform input,
 #signupform input,
 #loginform input {clear:none;}

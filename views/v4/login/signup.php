@@ -23,6 +23,9 @@
 				case 'exists':
 					echo 'The email or username you have chosen already exists.<br />';
 					break;
+				case 'fool':
+					echo 'You\'ve got to read, botha. Read the legal CRAAAAPPPPPP!<br />';
+					break;
 			}
 		}
 		echo '</p>';
@@ -50,6 +53,12 @@
 	
 	<label><?php echo view_manager::get_value('MATH'); ?></label>
 	<input type="text" name="math" />
+	
+	<label class="checkbox">
+		<input type="checkbox" name="privacy" value="coolbeans" /> <span>I read and understood all the <a href="<?php echo URL_PREFIX; ?>privacy">legal crap</a>.</span>
+	</label>
+	
+	<div class="clear"></div>
 	
 	<div class="buttons">
 		<input type="submit" value="I'm done!" />
