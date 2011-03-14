@@ -54,7 +54,40 @@ Sphinx
 Set up Sphinx to index MySQL. Beyond loading in a config file, there's really
 no other configuration necessary.
 
-# TODO : Post a config file
+Database-side
+~~~~~~~~~~~~~
+
+On Debian, Sphinx requires the "libmysqlclient15-dev" package to be installed.
+On other platforms, this may be called "mysql-devel".
+
+To perform the Sphinx indexing operation, a cron job should be created. A good
+default would be something like this:
+
+::
+
+	*   *   *   *   *   /usr/local/sphinx/bin/indexer --quiet --config /usr/local/sphinx/etc/sphinx.conf --rotate tinytape1
+
+A sample configuration file can be found in `setup/sphinx.conf` and should be
+reviewed and placed in `/usr/local/sphinx/etc/`. A data directory for the
+Sphinx index should be placed at `/usr/local/sphinx/data/tinytape`.
+
+Sphinx's searchd daemon needs to be running for search to work. To create the
+most basic kind of init.d script, simply save the following to
+`/etc/init.d/sphinx` (don't forget to `chmod +x /etc/init.d/sphinx`):
+
+::
+
+	cd /usr/local/sphinx/etc
+	/usr/local/sphinx/bin/searchd
+
+
+Web-server side
+~~~~~~~~~~~~~~~
+
+libsphinxclient must be installed on the web server before the PECL sphinx
+package can be installed. This is bundled in the Sphinx tarball under
+`api/libsphinxclient`. Depending on the version of Sphinx, some tweaking to
+`sphinxclient.c` may be required.
 
 
 Prerequirements
