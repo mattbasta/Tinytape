@@ -35,7 +35,7 @@ var player = {
 			}
 		}
 		if(player._fav_register) {
-			$.getJSON("/v4/api/favorites/determine", {favorites: favs.join(",")}, function(data) {
+			$.getJSON("/api/favorites/determine", {favorites: favs.join(",")}, function(data) {
 				for(var f in data) {
 					var fav = data[f];
 					for(var uid in player._fav_register) {
@@ -171,7 +171,7 @@ var player = {
 			case 'tinytape':
 				
 				var is_instance = !!resource.instance && resource.instance != 0;
-				var url = "/v4/song/";
+				var url = "/song/";
 				if(is_instance) {
 					url += "instance/" + resource.id + "/" + resource.instance;
 				} else {
@@ -358,7 +358,7 @@ window.setup_notifications = function() {
 				if(!onWebkitNotifications) {
 					showInlineNotification(element, timeout);
 				} else {
-					var icon = "/v4/api/albumart/redirect?title=" + escape(element.title) + "&artist=" + escape(element.artist) + "&size=medium";
+					var icon = "/api/albumart/redirect?title=" + escape(element.title) + "&artist=" + escape(element.artist) + "&size=medium";
 					var key = "1:albumart:" + element.title + element.artist + "large";
 					if(key in window.localStorage)
 						icon = window.localStorage[key];
