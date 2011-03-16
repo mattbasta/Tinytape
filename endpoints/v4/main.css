@@ -1123,3 +1123,7 @@ h1#user_name {
 	position:relative;
 	top:10px;
 }
+
+#my_badges a {
+	text-decoration:none;
+}
