@@ -20,6 +20,12 @@ class methods {
 	public function redirect() {
 		
 		$result = $this->determine();
+		
+		if(isset($_GET["debug"])) {
+			echo $result;
+			return false;
+		}
+		
 		if($result == false) {
 			header("Location: /images/noart.jpg");
 		} else {
@@ -47,8 +53,13 @@ class methods {
 			
 			$url = "http://ws.audioscrobbler.com/2.0/?format=json&method=track.search&api_key=" . LASTFM_APIKEY . "&track=$title&artist=$artist&limit=1";
 			
-			if(!($json_data = $keyval->get("tt_aacache.$url.$size")))
+			if(!($json_data = $keyval->get("tt_aacache.$url.$size")) || isset($_GET["debug"]))
 				$keyval->set("tt_aacache.$url", $json_data = file_get_contents($url));
+			
+			if(isset($_GET["debug"])) {
+				echo "J Data: $json_data";
+				return false;
+			}
 			
 			$json = json_decode($json_data, true);
 			
@@ -72,8 +83,13 @@ class methods {
 			
 			$url = "http://ws.audioscrobbler.com/2.0/?format=json&method=album.getInfo&api_key=" . LASTFM_APIKEY . "&album=$album&artist=$artist&limit=1";
 			
-			if(!($json_data = $keyval->get("tt_aacache.$url.$size")))
+			if(!($json_data = $keyval->get("tt_aacache.$url.$size")) || isset($_GET["debug"]))
 				$keyval->set("tt_aacache.$url", $json_data = file_get_contents($url));
+			
+			if(isset($_GET["debug"])) {
+				echo "J Data: $json_data";
+				return false;
+			}
 			
 			$json = json_decode($json_data, true);
 			
