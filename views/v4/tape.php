@@ -57,7 +57,13 @@ $(document).ready(function() {
 			);
 		}
 	});
-	<?php } ?>
+	<?php }
+	if(view_manager::get_value("CAN_DELETE_SONGS")) { ?>
+	$(".song-delete").click(function() {
+		
+	});
+	<?php }
+	?>
 });
 <?php
 }

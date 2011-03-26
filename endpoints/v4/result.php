@@ -49,7 +49,14 @@
 			echo '<li class="clean">Clean</li>';
 		?>
 	</ul>
-	<?php } ?>
+	<?php
+	}
+	if(view_manager::get_value("CAN_DELETE_SONGS")) {
+		?>
+		<a href="#" class="song-delete" onclick="jQuery.get('<?php echo URL_PREFIX; ?>tape/delete_song/<?php echo urlencode(view_manager::get_value("ID")), "/", $rid, "/", $instance_id; ?>?uid=<?php echo $uid; ?>',function(d){eval(d);});return false;"><img src="/images/delete.png" alt="Delete Song" /></a>
+		<?php
+	}
+	?>
 	<div class="clear"></div>
 	<div id="hardware_<?php echo $uid; ?>" class="hardware"></div>
 	<div id="playbar_<?php echo $uid; ?>" class="playbar"></div>

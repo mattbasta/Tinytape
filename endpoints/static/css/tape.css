@@ -138,3 +138,12 @@ h1#edit_head:hover {
 .albumscroller img {
 	-moz-transform:scale(1.2,1.2);
 }
+
+#searchlist a.song-delete {
+	display:none;
+	position:absolute;
+	top:0;
+	right:5px;
+	z-index:5;
+}
+#searchlist li:hover .song-delete {display:block;}

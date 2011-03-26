@@ -63,6 +63,7 @@ class methods {
 		   strlen($color) != 6 ||
 		   strlen($tape) < 2 ||
 		   strlen($tape) > 64 ||
+		   $tape == "delete_song" ||
 		   count($color_matches) != 1 ||
 		   count($url_matches) != 1) {
 			header("Location: " . URL_PREFIX . "tapes/new?invalid=badvalue");
