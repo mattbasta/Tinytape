@@ -81,4 +81,72 @@ class methods {
 		
 	}
 	
+	public function albums() {
+		global $r, $keyval, $db;
+		
+		define("DEBUG", true);
+		
+		if(true || !($output = $keyval->get("tinytape/sitemaps/albums"))) {
+			$songs = $db->get_table("songs");
+			
+			$pages = array();
+			$albums = $songs->fetch(
+				true,
+				FETCH_ARRAY,
+				array(
+					'columns'=>array('artist', 'album'),
+					'grouping'=>array(cloud::_st("album"), cloud::_st("artist"))
+				)
+			);
+			foreach($albums as $album)
+				if(!empty($album["album"]))
+					$pages[] = 'song/artist/' . urlencode($album["artist"]) . "/" . urlencode($album["album"]);
+			
+			view_manager::set_value("PAGES", $pages);
+			view_manager::set_value("UPDATES", "monthly");
+			
+			view_manager::add_view(VIEW_PREFIX . "sitemaps/shell");
+			
+			$output = view_manager::render();
+			$keyval->set("tinytape/sitemaps/albums", $output, 3600 * 6);
+		}
+		
+		return new HttpResponse($output);
+		
+	}
+	
+	public function artists() {
+		global $r, $keyval, $db;
+		
+		if(!($output = $keyval->get("tinytape/sitemaps/artists"))) {
+			$songs = $db->get_table("songs");
+			$pages_raw = $songs->fetch(
+				true,
+				FETCH_ARRAY,
+				array(
+					'columns'=>array(
+						'artist'
+					),
+					'grouping'=>cloud::_st("artist")
+				)
+			);
+			
+			$pages = array();
+			foreach($pages_raw as $page) {
+				$pages[] = "song/artist/" . urlencode($page["artist"]);
+			}
+			
+			view_manager::set_value("PAGES", $pages);
+			view_manager::set_value("UPDATES", "monthly");
+			
+			view_manager::add_view(VIEW_PREFIX . "sitemaps/shell");
+			
+			$output = view_manager::render();
+			$keyval->set("tinytape/sitemaps/artists", $output, 3600 * 6);
+		}
+		
+		return new HttpResponse($output);
+		
+	}
+	
 }
