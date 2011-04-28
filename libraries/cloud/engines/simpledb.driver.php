@@ -35,6 +35,7 @@
 
 $intsize = (string)PHP_INT_SIZE;
 define('SIMPLEDB_INT_LENGTH', strlen($intsize));
+define('SIMPLEDB_ROWID', "row_id");
 
 $cloud_simpledb_multi = null;
 
@@ -84,13 +85,11 @@ function cloud_simpledb_get($parameters, $key, $secret, $endpoint, $light = fals
 	
 	// Make the final request
 	$ch = curl_init(trim($url));
-	#echo $url;
+	
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	if(!$light) {
 		$output = curl_exec($ch);
-		
 		$xml = new SimpleXMLElement($output);
-		
 		return $xml;
 	} else {
 		// Run it asynchronously
@@ -115,6 +114,9 @@ function cloud_simpledb_close() {
 register_shutdown_function('cloud_simpledb_close');
 
 class simpledb_driver extends cloud_driver {
+	private $key;
+	private $secret;
+	private $endpoint = 'sdb.amazonaws.com';
 	
 	public function init($credentials) {
 		
@@ -122,83 +124,105 @@ class simpledb_driver extends cloud_driver {
 			return false; // TODO : Log this
 		
 		// Connect
-		self::secure('aws_key', $credentials['key']);
-		self::secure('aws_secret', $credentials['secret']);
+		$this->key = $credentials["key"];
+		$this->secret = $credentials["secret"];
 		
 		if(!empty($credentials['endpoint']))
-			self::secure('aws_endpoint', $credentials['endpoint']);
-		else
-			self::secure('aws_endpoint', 'sdb.amazonaws.com');
-		
+			$this->endpoint = $credentials["endpoint"];
 	}
 	public function close() { return true; }
 	
 	// Table Functions
-	
 	public function create_table($name, $columns) {
+		// TODO : Perhaps this function should be removed?
 		
-		// We can ignore $columns because columns are dynamically added
-		
+		// We can ignore $columns because columns are dynamically added.
 		$params = array(
 			'Action' => 'CreateDomain',
 			'DomainName' => $name
 		);
 		$response = cloud_simpledb_get(
 			$params,
-			self::secure('aws_key'),
-			self::secure('aws_secret'),
-			self::secure('aws_endpoint'),
+			$this->key,
+			$this->secret,
+			$this->endpoint,
 			true // No response
 		);
-		
 	}
+	
 	public function get_table_list() {
 		$params = array( 'Action' => 'ListDomains' );
 		$response = cloud_simpledb_get(
 			$params,
-			self::secure('aws_key'),
-			self::secure('aws_secret'),
-			self::secure('aws_endpoint')
+			$this->key,
+			$this->secret,
+			$this->endpoint
 		);
 		
 		if($response->ListDomainsResult) {
 			$tab_out = array();
-			foreach($response->ListDomainsResult->DomainName as $domain) {
+			foreach($response->ListDomainsResult->DomainName as $domain)
 				$tab_out[] = (string)$domain;
-			}
+			
 			return $tab_out;
 		} else
-			return cloud_logging::error("Could not fetch the domain list from Amazon.");
-		
+			throw new Exception("Could not fetch the domain list from Amazon.");
 	}
+	
 	public function get_table($name) {
-		// TODO : Check for existance.
 		return new simpledb_driver_table(
 			array(
-				'key' => self::secure('aws_key'),
-				'secret' => self::secure('aws_secret'),
-				'endpoint' => self::secure('aws_endpoint')
+				'key' => $this->key,
+				'secret' => $this->secret,
+				'endpoint' => $this->endpoint
 			),
 			$this,
 			$name
 		);
 	}
 	
+	public function escape_attribute($data) {
+		// Duplicate code makes me sad :(
+		switch(true) {
+			case is_integer($data):
+				return $this->escapeInteger($data);
+			case is_float($data):
+				return $this->escapeFloat($data);
+			case is_string($data):
+				return $this->escapeStringAttribute($data);
+			case is_bool($data):
+				return $this->escapeBool($data);
+			case is_array($data):
+				return $this->escapeList($data);
+			case is_object($data):
+				switch(true) {
+					case $data instanceof cloud_column:
+						return $this->prepareSimpleToken($data->name);
+					case $data instanceof simpleToken:
+						return $this->prepareSimpleToken($data);
+					case $data instanceof cloud_unescaped:
+						return $data->getValue();
+				}
+		}
+	}
 	
 	public function escapeBool($data) {return $data ? 1 : 0;}
-	public function escapeString($data, $no_quotes = false) {
+	public function escapeString($data) {
+		$data = $this->escapeStringAttribute($data);
+		return "'$data'";
+	}
+	public function escapeStringAttribute($data) {
 		if(strlen($data) > 1024)
 			$data = substr($data, 0, 1024);
-		if(!$no_quotes)
-			$data = "'" . str_replace("'", "''", $data) . "'";
+		$data = str_replace("'", "''", $data);
 		return $data;
 	}
-	public function escapeInteger($data, $no_quotes = false) {
+	public function escapeInteger($data) {
 		$data = (int)$data;
 		$data = str_pad($data, SIMPLEDB_INT_LENGTH, '0', STR_PAD_LEFT);
 		return $data;
 	}
-	public function escapeFloat($data, $no_quotes = false) {
+	public function escapeFloat($data) {
 		$rounded = round($data);
 		$length = strlen((string)$rounded);
 		$length = $length + 6 - ($length % 6);
@@ -212,71 +236,50 @@ class simpledb_driver extends cloud_driver {
 		}
 		return $output;
 	}
-	/*
-		Escape Array Types:
-		- 0 :	Nondelimited
-		- 1 :	Delimited
-		- 2 :	Comparison
-	*/
-	public function escapeArray($data, $type = 0, $no_quotes = false) {
-		if(!is_array($data))
-			return $this->escape($data, $no_quotes);
-		
-		switch($type) {
-			case 0:
-				$delimiter = ' ';
-				break;
-			case 1:
-				$delimiter = ', ';
-				break;
-			case 2:
-				$delimiter = ' and ';
-				break;
-		}
+	
+	public function escapeList($array, $commas = true, $escape = true) {
+		if(!is_array($array))
+			return $escape ? $this->escape($array) : $array;
 		
 		$final = array();
-		foreach($data as $key => $value) {
-			$build = '';
-			$orig_type = gettype($value);
-			
-			if(is_string($value))
-				$value = trim($value);
-			
-			$value = $this->escape($value, $no_quotes);
-			
-			switch($type) {
-				case 1:
-				case 0:
-					$build = $value;
-					break;
-				case 2:
-					switch($orig_type) {
-						case 'integer':
-						case 'string':
-						case 'double':
-						case 'float':
-						case 'boolean':
-							if(is_string($key))
-								$build = "{$this->prepareSimpleToken($key)} = $value";
-							else
-								$build = 'true';
-							break;
-						case 'array':
-						case 'object':
-							$build = $value;
-					}
-					break;
-			}
-			
-			$final[] = $build;
-			
+		for($array as $key=>$item) {
+			$build = $escape ? $this->escape($item) : $item;
+			if(is_string($key))
+				$final[] = $this->prepareSimpleToken($key) . " = " . $build;
+			else
+				$final[] = $build;
 		}
-		
-		return implode($delimiter, $final);
-		
+		return implode($commas ? ", " : " ", $final);
 	}
 	
-	public function prepareSimpleToken($token, $no_quotes = false) {
+	public function escapeConditions($array) {
+		if(!is_array($array))
+			return $this->escape($array); # We can force this for conditions
+		
+		$final = array();
+		for($array as $key=>$item) {
+			if(is_object($item)) {
+				$final[] = $this->escape($item);
+				continue;
+			}
+			
+			if(is_string($key))
+				$final[] = $this->prepareSimpleToken($key) . " = " . $this->escape($item);
+			elseif(is_array($item))
+				$final[] = $this->escapeConditions($item);
+		}
+		return implode(" and ", $final);
+	}
+	
+	public function prepareSimpleToken($token) {
+		if($tokentext == SIMPLEDB_ROWID)
+			return 'itemName()';
+		
+		$tokentext = '`' . $this->prepareSimpleTokenAttribute($token) . '`';
+		return $tokentext;
+	}
+	
+	public function prepareSimpleTokenAttribute($token) {
 		if(is_string($token))
 			$tokentext = $token;
 		elseif($token instanceof simpleToken)
@@ -285,16 +288,16 @@ class simpledb_driver extends cloud_driver {
 		if(strlen($tokentext) > 1024)
 			$tokentext = substr($tokentext, 0, 1024);
 		
-		if($tokentext == '_primary_key')
+		if($tokentext == SIMPLEDB_ROWID)
 			return 'itemName()';
 		
 		$tokentext = str_replace("\n", '', $tokentext);
 		$tokentext = str_replace("\r", '', $tokentext);
 		$tokentext = str_replace("\t", '', $tokentext);
-		if(!$no_quotes)
-			$tokentext = '`' . str_replace('`', '``', $tokentext) . '`';
+		$tokentext = str_replace('`', '``', $tokentext);
 		return $tokentext;
 	}
+	
 	public function prepareCombinator($combinator) {
 		$logic = strtolower($combinator->getLogic());
 		$terms = $combinator->getTerms();
@@ -333,7 +336,7 @@ class simpledb_driver extends cloud_driver {
 						
 					$backtrace = debug_backtrace(true);
 					$caller = $backtrace[ min(count($backtrace), 2) ]['function'];
-					if($caller == 'prepareCombinator' || $caller == 'escapeArray')
+					if($caller == 'prepareCombinator' || $caller == 'escapeConditions')
 						return '(' . implode(" $logic ", $build) . ')';
 					else
 						return implode(" $logic ", $build);
@@ -356,17 +359,25 @@ class simpledb_driver extends cloud_driver {
 
 class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 	
+	private $key;
+	private $secret;
+	private $endpoint;
+	
+	private $driver;
+	private $name;
+	
 	private $transaction = 0;
 	private $transaction_data = array();
 	
+	private $column_cache = array();
+	
 	public function __construct($connection, $driver, $name) {
+		$this->key = $connection["key"];
+		$this->secret = $connection["secret"];
+		$this->endpoint = $connection["endpoint"];
 		
-		self::secure('aws_key', $connection['key']);
-		self::secure('aws_secret', $connection['secret']);
-		self::secure('aws_endpoint', $connection['endpoint']);
-		
-		self::secure('driver', $driver);
-		self::secure('name', $name);
+		$this->driver = $driver;
+		$this->name = $name;
 	}
 	
 	public function __destruct() {
@@ -374,51 +385,45 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			$this->flush_write_transaction();
 	}
 	
-	public function destroy() {
-		$name = self::secure('name');
-		
+	public function drop() {
 		$params = array(
 			'Action' => 'DeleteDomain',
-			'DomainName' => $name
+			'DomainName' => $this->name
 		);
 		$response = cloud_simpledb_get(
 			$params,
-			self::secure('aws_key'),
-			self::secure('aws_secret'),
-			self::secure('aws_endpoint'),
+			$this->key,
+			$this->secret,
+			$this->endpoint,
 			true // No response
 		);
 		
-		self::secure('aws_key', false, true);
-		self::secure('aws_secret', false, true);
-		self::secure('driver', false, true);
-		self::secure('name', false, true);
+		$this->key = null;
+		$this->secret = null;
+		$this->endpoint = null;
 		
+		$this->driver = null;
+		$this->name = null;
 	}
 	
-	public function get_driver() {return self::secure('driver');}
+	public function get_driver() { return $this->driver; }
 	
 	public function get_columns() {
 		
-		$columns = self::secure('column_cache');
-		if(!empty($columns))
-			return $columns;
-		else
-			$columns = array();
-		
-		$driver = self::secure('driver');
-		$name = self::secure('name');
+		if(!empty($this->column_cache))
+			return $this->column_cache;
+		$columns = array();
 		
 		$params = array(
 			'Action' => 'Select',
-			'DomainName' => $name,
-			'SelectExpression' => "select * from {$driver->prepareSimpleToken($name)} limit 100"
+			'DomainName' => $this->name,
+			'SelectExpression' => "select * from {$this->driver->prepareSimpleToken($this->name)} limit 100"
 		);
 		$response = cloud_simpledb_get(
 			$params,
-			self::secure('aws_key'),
-			self::secure('aws_secret'),
-			self::secure('aws_endpoint')
+			$this->key,
+			$this->secret,
+			$this->endpoint
 		);
 		
 		if($response->SelectResult) {
@@ -433,46 +438,40 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 						);
 				}
 			}
-			self::secure('column_cache', $columns);
+			
+			$this->column_cache = $columns;
+			
 			return $columns;
 		} else
-			return cloud_logging::error("Could not fetch a list of sample objects from Amazon on which to base a column listing.");
-		
+			throw new Exception("Could not fetch a list of sample objects from Amazon on which to base a column listing.");
 	}
+	
 	public function get_primary_column() {
 		return new cloud_column(
-			'_primary_key',
+			SIMPLEDB_ROWID,
 			'text',
 			1024,
 			'PRI'
 		);
 	}
-	public function create_column($position, $column) { return true; }
-	public function delete_column($name) { return true; } // TODO : Virtualize this out
 	
 	public function get_length() {
-		$driver = self::secure('driver');
-		$name = self::secure('name');
-		
-		$expression = "select count(*) from {$driver->prepareSimpleToken($name)} limit 1000000000";
+		$expression = "select count(*) from {$this->driver->prepareSimpleToken($this->name)} limit 1000000000";
 		
 		return $this->do_count($expression);
-		
 	}
 	
 	private function do_count($expression) {
-		$driver = self::secure('driver');
-		$name = self::secure('name');
-		
 		$total = 0;
 		$continue = true;
 		$token = '';
+		
 		while($continue) {
 			$continue = false;
 			
 			$params = array(
 				'Action' => 'Select',
-				'DomainName' => $name,
+				'DomainName' => $this->name,
 				'SelectExpression' => $expression
 			);
 			if(!empty($token))
@@ -480,9 +479,9 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			
 			$result = cloud_simpledb_get(
 				$params,
-				self::secure('aws_key'),
-				self::secure('aws_secret'),
-				self::secure('aws_endpoint')
+				$this->key,
+				$this->secret,
+				$this->endpoint
 			);
 			if($result->SelectResult){
 				$total += (int)($result->SelectResult->Item->Attribute->Value);
@@ -499,11 +498,7 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		return $total;
 	}
 	
-	
-	public function insert_row($id, $values) {
-		$driver = self::secure('driver');
-		$name = self::secure('name');
-		
+	public function insert_row($values) {
 		// Keep the original ID around in case the user wants to change it
 		$orig_id = $id;
 		
@@ -522,17 +517,16 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			// URL parameters
 			$params = array(
 				'Action' => 'PutAttributes',
-				'DomainName' => $name,
-				'ItemName' => $driver->prepareSimpleToken($id, true)
+				'DomainName' => $this->name,
+				'ItemName' => $this->driver->prepareSimpleToken($id, true)
 			);
 		}
-		
 		
 		$vcount = 0;
 		foreach($values as $k=>$v) {
 			
 			// If user passes a primary key, we should still honor it.
-			if($k == '_primary_key') {
+			if($k == 'id') {
 				// Ignore if there's no change
 				if($v == $id)
 					continue;
@@ -541,14 +535,14 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 					$id = $v; // We're just updating the end result.
 					// TODO : Work in a seperate version for Update/Upsert so this is less generic
 				else
-					$params['ItemName'] = $driver->prepareSimpleToken($v, true);
+					$params['ItemName'] = $this->driver->prepareSimpleTokenAttribute($v, true);
 			}
 			
 			if($transaction)
 				$params[$k] = $v;
 			else {
-				$params["Attribute.$vcount.Name"] = $driver->escape($k, true);
-				$params["Attribute.$vcount.Value"] = $driver->escape($v, true);
+				$params["Attribute.$vcount.Name"] = $this->driver->escape_attribute($k);
+				$params["Attribute.$vcount.Value"] = $this->driver->escape_attribute($v);
 				$params["Attribute.$vcount.Replace"] = "true";
 			}
 			$vcount++;
@@ -566,40 +560,29 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		} else
 			cloud_simpledb_get(
 				$params,
-				self::secure('aws_key'),
-				self::secure('aws_secret'),
-				self::secure('aws_endpoint'),
+				$this->key,
+				$this->secret,
+				$this->endpoint,
 				true // No response
 			);
 		
 	}
-	public function upsert_row($id, $values) {
-		// SimpleDB automatically upserts
-		return $this->insert_row($id, $values);
-	}
-	public function update_row($id, $values) {
-		// SimpleDB updates are also inserts
-		return $this->insert_row($id, $values);
-	}
 	
-	public function update($conditions = false, $values = '', $limit = -1, $order = '') {
+	public function update($conditions, $values, $limit = -1, $order = '') {
 		
 		if(!$conditions)
 			return true;
 		
 		// You can't set the primary key
 		foreach($values as $k=>$v)
-			if($k == '_primary_key')
-				return cloud_logging::error("Setting the primary key on a SimpleDB through the Update command is not currently supported.");
-		
-		$driver = self::secure('driver');
-		$name = self::secure('name');
+			if($k == SIMPLEDB_ROWID)
+				throw new Exception("Setting the primary key on a SimpleDB through the Update command is not currently supported.");
 		
 		// Build out the expression to detect items to update
 		// Can't have more than a billion attributes per domain, might as well not even request that many items.
-		$expression = "select itemName() from {$driver->prepareSimpleToken($name)} where {$driver->escapeArray($conditions, 2)}";
+		$expression = "select itemName() from {$this->driver->prepareSimpleToken($this->name)} where {$this->driver->escapeConditions($conditions)}";
 		if(!empty($order))
-			$expression .= ' order by ' . $driver->escape($order);
+			$expression .= ' order by ' . $this->driver->escape($order);
 		if($limit > -1)
 			$expression .= ' limit ' . $limit;
 		
@@ -612,7 +595,7 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			$continue = false;
 			$params = array(
 				'Action' => 'Select',
-				'DomainName' => $name,
+				'DomainName' => $this->name,
 				'SelectExpression' => $expression
 			);
 			if(!empty($token))
@@ -620,9 +603,9 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			
 			$result = cloud_simpledb_get(
 				$params,
-				self::secure('aws_key'),
-				self::secure('aws_secret'),
-				self::secure('aws_endpoint')
+				$this->key,
+				$this->secret,
+				$this->endpoint
 			);
 			
 			if($result->SelectResult) {
@@ -642,51 +625,45 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 					$continue = true;
 				}
 			}
-			
 		}
 		
 		$this->flush_write_transaction();
-		
 	}
 	
 	public function delete_row($id) {
-		$driver = self::secure('driver');
-		$name = self::secure('name');
 		
 		$params = array(
 			'Action' => 'DeleteAttributes',
-			'DomainName' => $name,
-			'ItenName' => $driver->prepareSimpleToken($id, true)
+			'DomainName' => $this->name,
+			'ItenName' => $this->driver->prepareSimpleToken($id, true)
 		);
 		
 		$result = cloud_simpledb_get(
 			$params,
-			self::secure('aws_key'),
-			self::secure('aws_secret'),
-			self::secure('aws_endpoint'),
+			$this->key,
+			$this->secret,
+			$this->endpoint,
 			true
 		);
 	}
-	public function delete($conditions = false, $limit = -1, $order = '') {
+	
+	public function delete($conditions, $limit = -1, $order = '') {
 		
 		if(!$conditions)
 			return true;
 		
 		// Ony one can be deleted if the primary key is set
 		foreach($conditions as $k=>$v) {
-			if($k == '_primary_key' || (is_object($v) && get_class($v) == 'comparison' && ($v->getObject1() == '_primary_key' || $v->getObject2() == '_primary_key'))) {
+			if($k == SIMPLEDB_ROWID || (is_object($v) && get_class($v) == 'comparison' && ($v->getObject1() == SIMPLEDB_ROWID || $v->getObject2() == SIMPLEDB_ROWID))) {
 				$limit = 1;
 				break;
 			}
 		}
 		
-		$driver = self::secure('driver');
-		$name = self::secure('name');
-		
 		// Build out the expression to detect items to update
-		$expression = "select itemName() from {$driver->prepareSimpleToken($name)} WHERE {$this->escapeArray($conditions, 2)}";
+		$expression = "select itemName() from {$this->driver->prepareSimpleToken($this->name)} WHERE {$this->driver->escapeConditions($conditions)}";
 		if(!empty($order))
-			$expression .= ' order by ' . $this->escape($order);
+			$expression .= ' order by ' . $this->driver->escape($order);
 		if($limit > -1)
 			$expression .= ' limit ' . $limit;
 		
@@ -696,7 +673,7 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			$continue = false;
 			$params = array(
 				'Action' => 'Select',
-				'DomainName' => $name,
+				'DomainName' => $this->name,
 				'SelectExpression' => $expression
 			);
 			if(!empty($token))
@@ -704,18 +681,16 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			
 			$result = cloud_simpledb_get(
 				$params,
-				self::secure('aws_key'),
-				self::secure('aws_secret'),
-				self::secure('aws_endpoint')
+				$this->key,
+				$this->secret,
+				$this->endpoint
 			);
 			
 			if($result->SelectResult) {
 				
 				foreach($result->SelectResult->Item as $item) {
 					$item_name = (string)($item->Name);
-					
 					$this->delete_row($item_name);
-					
 				}
 				
 				if($result->SelectResult->NextToken) {
@@ -727,7 +702,7 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		}
 	}
 	
-	// The pseudocolumn "_primary_key" should be used to denote the primary key
+	// The pseudocolumn SIMPLEDB_ROWID should be used to denote the primary key
 	/*
 	Params
 		- Columns
@@ -736,44 +711,23 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		- Order
 		- Array ID (Expects column name)
 	*/
-	public function fetch($conditions = '', $return = 0, $params = '') {
-		$connection = self::secure('connection');
-		$driver = self::secure('driver');
-		$name = self::secure('name');
-		
+	public function fetch($conditions, $return, $params = '') {
 		if(!is_array($params))
 			$params = array();
 		$columns = isset($params['columns']) ? $params['columns'] : '*';
 		$limit = isset($params['limit']) ? intval($params['limit']) : -1;
 		$offset = isset($params['offset']) ? $params['offset'] : 0;
 		$order = isset($params['order']) ? $params['order'] : '';
-		$arrid = isset($params['arrayid']) ? $params['arrayid'] : '_primary_key';
+		$arrid = isset($params['arrayid']) ? $params['arrayid'] : SIMPLEDB_ROWID;
 		
 		$is_array_col = is_array($columns);
 		
-		if($return == 8 && $is_array_col) {
-			// This is a FETCH_SINGLE command. What are you doing, silly dev?
-			$columns = $columns[0];
-			$is_array_col = false;
-			cloud_logging::warning("FETCH_SINGLE command passed mutiple parameters.");
-		}
+		if($return == 8 && $is_array_col)
+			throw new Exception("FETCH_SINGLE command passed mutiple parameters.");
 		
 		// Limit of 25 columns per query :(
-		if($is_array_col && count($columns) > 25 && !($return = 6 || $return == 7)) {
-			// TODO : Virtualize this away
-			$attempt = cloud_logging::unsafe_query(
-				'SimpleDB Fetch',
-				'Too many columns selected (25 maximum)',
-				array(
-					'Missing information',
-					'Abstraction automatically adjusts to `*`'
-				)
-			);
-			if($attempt) {
-				$columns = '*';
-			} else
-				return false;
-		}
+		if($is_array_col && count($columns) > 25 && !($return = 6 || $return == 7))
+			$columns = '*';
 		
 		if($return == 6 || $return == 7) { // Unloaded tokens don't need any values.
 			$columns = 'itemName()';
@@ -781,9 +735,9 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		} elseif($return != 1 && $columns != "*") { // Just exclude counts altogether
 			if($is_array_col) {
 				foreach($columns as $key => &$value) {
-					if(	$value === '_primary_key' ||
+					if(	$value === SIMPLEDB_ROWID ||
 						(	($value instanceof simpleToken) &&
-							$value->getToken() == '_primary_key' ) ) {
+							$value->getToken() == SIMPLEDB_ROWID ) ) {
 						unset($columns[$key]);
 						continue;
 					}
@@ -791,7 +745,7 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 						$value = cloud::_st($value);
 				}
 			}
-			$columns = $driver->escapeArray($columns, 1);
+			$columns = $this->driver->escapeList($columns);
 		}
 		
 		// Used as a limiter. Must be respected by result objects, as well
@@ -809,18 +763,18 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 				foreach($order as $sort) {
 					if($sort instanceof listOrder) {
 						$o1 = $sort->getVariable();
-						if($o1 == '_primary_key') continue;
+						if($o1 == SIMPLEDB_ROWID) continue;
 						if(!isset($ordervars[$o1]))
 							$ordervars[$o1] = $o1;
 					} elseif(is_string($sort)) {
-						if($sort == '_primary_key') continue;
+						if($sort == SIMPLEDB_ROWID) continue;
 						if(!isset($ordervars[$sort]))
 							$ordervars[$sort] = $sort;
 					}
 				}
 			} elseif($order instanceof listOrder) {
 				$o1 = $order->getVariable();
-				if($o1 != '_primary_key' && !isset($ordervars[$o1]))
+				if($o1 != SIMPLEDB_ROWID && !isset($ordervars[$o1]))
 					$ordervars[$o1] = $o1;
 			}
 			
@@ -841,9 +795,7 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 				if(!$found) {
 					$conditions[] = new comparison($ov, 'is not null', null);
 				}
-				
 			}
-			
 		}
 		
 		// We segment off the suffix because we can use them a second time if a sub-query
@@ -852,9 +804,9 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		// returned to grab the remaining results.
 		$suffix = '';
 		if(!empty($conditions))
-			$suffix = " where {$driver->escapeArray($conditions, 2)}";
+			$suffix = " where {$this->driver->escapeConditions($conditions)}";
 		if(!empty($order))
-			$suffix .= " order by {$driver->escapeArray($order, 1)}";
+			$suffix .= " order by {$this->driver->escapeList($order)}";
 		
 		if($return == 3 || $return == 5 || $return == 7 || $return == 8)
 			$limit = 1;
@@ -868,12 +820,12 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		if($offset > 0 && $return != 1) {
 			$offset = (int)$offset;
 			
-			$subquery = "select count(*) from {$driver->prepareSimpleToken($name)}$suffix limit $offset";
+			$subquery = "select count(*) from {$this->driver->prepareSimpleToken($this->name)}$suffix limit $offset";
 			
 			while(true) {
 				$subparams = array(
 					'Action' => 'Select',
-					'DomainName' => $name,
+					'DomainName' => $this->name,
 					'SelectExpression' => $subquery
 				);
 				if(!empty($mandatory_next_token))
@@ -881,9 +833,9 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 				
 				$subresult = cloud_simpledb_get(
 					$subparams,
-					self::secure('aws_key'),
-					self::secure('aws_secret'),
-					self::secure('aws_endpoint')
+					$this->key,
+					$this->secret,
+					$this->endpoint
 				);
 				
 				if($subresult->SelectResult) {
@@ -917,10 +869,9 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			$suffix .= " limit $limit";
 		}
 		
-		
 		$params = array(
 			'Action' => 'Select',
-			'DomainName' => $name
+			'DomainName' => $this->name
 		);
 		
 		if(!empty($mandatory_next_token))
@@ -928,11 +879,11 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		
 		
 		if($return == 1) { // Just a simple count
-			$query = "select count(*) from {$driver->prepareSimpleToken($name)}$suffix";
+			$query = "select count(*) from {$this->driver->prepareSimpleToken($this->name)}$suffix";
 			return $this->do_count($query);
 		}
 		
-		$query = "select $columns from {$driver->prepareSimpleToken($name)}$suffix";
+		$query = "select $columns from {$this->driver->prepareSimpleToken($this->name)}$suffix";
 		$params["SelectExpression"] = $query;
 		
 		if(	$return == FETCH_RESULT ||
@@ -942,30 +893,17 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			$return == FETCH_SINGLE) {
 			$result = cloud_simpledb_get(
 				$params,
-				self::secure('aws_key'),
-				self::secure('aws_secret'),
-				self::secure('aws_endpoint')
+				$this->key,
+				$this->secret,
+				$this->endpoint
 			);
 			if(!$result->SelectResult)
 				return false;
-			
 		}
 		
 		$output = false;
 		
 		switch($return) {
-			case FETCH_RESULT: // Result object
-				return false;
-				// TODO: Implement this output type.
-				/*
-				return new simpledb_return( array(
-					'driver' => $driver,
-					'table' => $this,
-					'expression' => $query,
-					'query' => $result,
-					'mandatory_token' => $mandatory_next_token
-				));
-				*/
 			//case FETCH_COUNT: // Row count is already handled above
 			case FETCH_ARRAY: // Array
 				$output = array();
@@ -984,8 +922,8 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 				$rows_rows = $rows['rows'];
 				foreach($rows_rows as $rname=>$row) {
 					$output[$row[$arrid]] = new cloud_token(
-						$driver,
 						$this,
+						SIMPLEDB_ROWID,
 						$row[$rname],
 						$return == 4 ? $row : ''
 					);
@@ -996,9 +934,8 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 				$row = $result->SelectResult->Item;
 				$row_name = (string)$row->Name;
 				return new cloud_token(
-					$driver,
 					$this,
-					$row_name,
+					SIMPLEDB_ROWID,
 					$this->get_array($row, $row_name)
 				);
 				break;
@@ -1015,14 +952,12 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 	}
 	
 	private function get_rows($expression, $recurse = 0, $start_token = '') {
-		$name = self::secure('name');
-		
 		$token = '';
 		$rows = array();
 		
 		$params = array(
 			'Action' => 'Select',
-			'DomainName' => $name,
+			'DomainName' => $this->name,
 			'SelectExpression' => $expression
 		);
 		if(!empty($start_token))
@@ -1030,9 +965,9 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		
 		$result = cloud_simpledb_get(
 			$params,
-			self::secure('aws_key'),
-			self::secure('aws_secret'),
-			self::secure('aws_endpoint')
+			$this->key,
+			$this->secret,
+			$this->endpoint
 		);
 		
 		if($result->SelectResult) {
@@ -1040,7 +975,6 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			foreach($result->SelectResult->Item as $item) {
 				$item_name = (string)($item->Name);
 				$rows[$item_name] = $this->get_array($item, $item_name);
-				
 			}
 			
 			if($result->SelectResult->NextToken) {
@@ -1068,22 +1002,20 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 			$value = (string)$attr->Value;
 			$output[$name] = $value;
 		}
-		$output['_primary_key'] = $id;
+		$output[SIMPLEDB_ROWID] = $id;
 		return $output;
 	}
 	
-	public function fetch_exists($conditions = '') {
-		
-		$driver = self::secure('driver');
-		$query = "select count(*) from {$driver->prepareSimpleToken($name)} where {$driver->escapeArray($conditions, 2)} limit 1";
+	public function fetch_exists($conditions) {
+		$query = "select count(*) from {$this->driver->prepareSimpleToken($this->name)} where {$this->driver->escapeConditions($conditions)} limit 1";
 		return $this->do_count($query) > 0;
 	}
 	
 	public function start_write_transaction() {
 		$this->transaction++;
 	}
+	
 	public function flush_write_transaction() {
-		
 		$this->transaction--;
 		if($this->transaction > 0)
 			return false;
@@ -1091,16 +1023,12 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		$this->do_write_flush();
 		
 		$this->transaction_data = array();
-		
 	}
 	
 	private function do_write_flush() {
-		$driver = self::secure('driver');
-		$name = self::secure('name');
-		
 		$params = array(
 			'Action' => 'BatchPutAttributes',
-			'DomainName' => $name
+			'DomainName' => $this->name
 		);
 		
 		$transdata = $this->transaction_data;
@@ -1113,17 +1041,17 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		
 		foreach($transdata as $iname=>&$iitem) { // We'll be updating iitem, so we reference it
 			$vcount = 0;
-			$params["Item.$icount.ItemName"] = $driver->prepareSimpleToken($iname, true);
+			$params["Item.$icount.ItemName"] = $this->driver->prepareSimpleToken($iname, true);
 			foreach($iitem as $k=>$v) {
 				// If user passes a primary key, we should still honor it.
-				if($k == '_primary_key') {
-					$params["Item.$icount.ItemName"] = $driver->prepareSimpleToken($v, true);
+				if($k == SIMPLEDB_ROWID) {
+					$params["Item.$icount.ItemName"] = $this->driver->prepareSimpleToken($v, true);
 					unset($iitem[$k]);
 					continue;
 				}
-				$params["Item.$icount.Attribute.$vcount.Name"] = $driver->escape($k, true);
+				$params["Item.$icount.Attribute.$vcount.Name"] = $this->driver->escape($k, true);
 				if(is_array($v)) {
-					$params["Item.$icount.Attribute.$vcount.Value"] = $driver->escape($v['value'], true);
+					$params["Item.$icount.Attribute.$vcount.Value"] = $this->driver->escape($v['value'], true);
 					if($v['replace']) {
 						$params["Item.$icount.Attribute.$vcount.Replace"] = "true";
 						$data_total += 35;
@@ -1131,7 +1059,7 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 					
 					$data_total += strlen($v['value']) + 36;
 				} else {
-					$params["Item.$icount.Attribute.$vcount.Value"] = $driver->escape($v, true);
+					$params["Item.$icount.Attribute.$vcount.Value"] = $this->driver->escape($v, true);
 					$params["Item.$icount.Attribute.$vcount.Replace"] = "true";
 					
 					$data_total += strlen($v) + 70;
@@ -1165,142 +1093,11 @@ class simpledb_driver_table extends cloud_base implements cloud_driver_table {
 		}
 		cloud_simpledb_get(
 			$params,
-			self::secure('aws_key'),
-			self::secure('aws_secret'),
-			self::secure('aws_endpoint'),
+			$this->key,
+			$this->secret,
+			$this->endpoint,
 			true // No response
 		);
 	}
 	
 }
-/*
-class simpledb_return extends cloud_return {
-	
-	// State Functions
-	public function init($construct) {
-		
-		$query = $contruct['query'];
-		
-		self::secure('driver', $contruct['driver']);
-		self::secure('table', $contruct['table']);
-		self::secure('expression', $query);
-		self::secure('query', $contruct['query']);
-		self::secure('mandatory_token', $contruct['mandatory_token']);
-		
-		$this->length = -1;
-		
-		if(!($query->SelectResult->NextToken)) {
-			$this->length = $query->SelectResult->
-		}
-		
-	}
-	public function close() { return; }
-	
-	// Retrieval Functions
-	public function next_array() {
-		$query = self::secure('query');
-		$this->pointer++;
-		return $query->fetch_array(MYSQLI_ASSOC);
-	}
-	public function next_token() {
-		$query = self::secure('query');
-		$driver = self::secure('driver');
-		$table = self::secure('table');
-		
-		$this->pointer++;
-		$row_data = $query->fetch_array(MYSQLI_ASSOC);
-		
-		// TODO : Cache this?
-		$pcol = $table->get_primary_column();
-		
-		return new cloud_token(
-			$driver,
-			$table,
-			$row_data[$pcol->name],
-			$row_data
-		);
-	}
-	
-	// TODO : Remove code duplication
-	public function peek_array() {
-		$query = self::secure('query');
-		$data = $query->fetch_array(MYSQLI_ASSOC);
-		$query->data_seek($this->pointer);
-		return $data;
-	}
-	public function peek_token() {
-		$query = self::secure('query');
-		$driver = self::secure('driver');
-		$table = self::secure('table');
-		
-		$row_data = $query->fetch_array(MYSQLI_ASSOC);
-		$query->data_seek($this->pointer);
-		
-		// TODO : Cache this?
-		$pcol = $table->get_primary_column();
-		
-		return new cloud_token(
-			$driver,
-			$table,
-			$row_data[$pcol->name],
-			$row_data
-		);
-	}
-	
-	// Result Set Functions
-	public function rewind() {
-		$query = self::secue('query');
-		$query->data_seek(0);
-		$this->pointer = 0;
-	}
-	public function skip($count = 1) {
-		$new_pointer = $this->pointer + $count;
-		if($new_pointer == $this->length)
-			return false;
-		if($new_pointer < 0 || $new_pointer >= $this->length)
-			return cloud_logging::warning("Skipping to a position out of bounds.");
-		
-		$this->pointer = $new_pointer;
-	}
-	public function seek($index) {
-		if($index < 0 || $index >= $this->length)
-			return cloud_logging::warning("Seeking to a position out of bounds.");
-		
-		$this->pointer = $index;
-		
-		$query = self::secue('query');
-		$query->data_seek($index);
-		
-	}
-	public function slide($until) {
-		$query = self::secure('query');
-		do {
-			$matches = true;
-			$row = $query->fetch_array(MYSQLI_ASSOC);
-			
-			foreach($until as $key=>$value) {
-				if($row[$key] != $value) {
-					$matches = false;
-					break;
-				}
-				// TODO : Virtualization for the comparison objects
-			}
-			
-			$this->pointer++;
-			if($this->pointer == $this->length)
-				return false;
-		} while(!$matches);
-		
-		$this->pointer--;
-		$query->data_seek($this->pointer);
-		return true;
-	}
-	public function remaining() {
-		return $this->length - $this->pointer;
-	}
-	public function size() {
-		return $this->length;
-	}
-	
-}
-*/

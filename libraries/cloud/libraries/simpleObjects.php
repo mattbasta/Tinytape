@@ -6,7 +6,7 @@
  *
  * PHP version 5
  *
- * Copyright 2010 Matt Basta
+ * Copyright 2011 Matt Basta
  * 
  * @author     Matt Basta <matt@serverboy.net>
  * 
@@ -26,7 +26,12 @@
 
 // Simple comparison (two terms)
 
-class comparison extends cloud_base {
+class comparison {
+	
+	private $obj1;
+	private $obj2;
+	private $comparison;
+	
 	public function __construct($obj1, $comparison, $obj2) {
 		
 		// Make sure the comparison is a valid comparison operator
@@ -46,45 +51,30 @@ class comparison extends cloud_base {
 		
 		$comparison2 = strtoupper($comparison);
 		if(!isset($supported_comparisons[$comparison2]))
-			cloud_logging::unsafe_query(
-				'Comparisons',
-				"Comparison Operator ($comparison)",
-				array(
-					'This is not a globally supported db comparison operator.',
-					'> Possible disintegration of intended data set',
-					'> Possible corruption of data',
-					'> Possible incorrect reporting of data'
-				)
-			);
+			throw new Exception("Unsupported comparison operator used: " . $comparison);
 		
 		
 		// Store the objects securely
-		$this->secure('object_1', $obj1);
-		$this->secure('comparison', $comparison);
-		$this->secure('object_2', $obj2);
+		$this->obj1 = $obj1;
+		$this->obj2 = $obj2;
+		$this->comparison = $comparison;
 	}
 	
-	public function getObject1() {return $this->secure('object_1');}
-	public function getObject2() {return $this->secure('object_2');}
-	public function getOperation() {return $this->secure('comparison');}
+	public function getObject1() {return $this->obj1;}
+	public function getObject2() {return $this->obj2;}
+	public function getOperation() {return $this->comparison;}
 }
 
 
+class logicCombinator {
 
-class logicCombinator extends cloud_base {
+	private $logic;
+	private $terms;
 	
 	public function __construct($terms, $logic) {
 		
 		if(!is_array($terms) || count($terms) < 1)
-			cloud_logging::unsafe_query(
-				'Comparisons',
-				'Comparison Logic',
-				array(
-					'An empty logic combinator was supplied.',
-					'> Your logic may be flawed',
-					'> Database errors may occur',
-				)
-			);
+			throw new Exception("Empty logic combinator was supplied.");
 		
 		// Make sure the comparison is a valid comparison operator
 		$supported_logic = array(
@@ -96,29 +86,23 @@ class logicCombinator extends cloud_base {
 		
 		$logic = strtoupper($logic);
 		if(!isset($supported_logic[$logic]))
-			cloud_logging::unsafe_query(
-				'Comparisons',
-				"Comparison Logic ($comparison)",
-				array(
-					'This is not a globally supported boolean logic combinator.',
-					'> Possible disintegration of intended data set',
-					'> Possible corruption of data',
-					'> Possible incorrect reporting of data'
-				)
-			);
+			throw new Exception("Unsupported boolean operator supplied: " . $logic);
 		
-		$this->secure('logic', $logic);
-		$this->secure('terms', $terms);
+		$this->logic;
+		$this->terms;
 	}
 	
-	public function getLogic() {return $this->secure('logic');}
-	public function getTerms() {return $this->secure('terms');}
+	public function getLogic() {return $this->logic;}
+	public function getTerms() {return $this->terms;}
 	
 }
 
 // Order
 
-class listOrder extends cloud_base {
+class listOrder {
+	
+	private $variable;
+	private $order;
 	
 	public function __construct($variable, $order) {
 		
@@ -129,58 +113,55 @@ class listOrder extends cloud_base {
 		
 		$order = strtoupper($order);
 		if(!in_array($order, $supported_orders))
-			cloud_logging::unsafe_query(
-				'Order',
-				"Directionality ($order)",
-				array(
-					'This is not a globally supported directionality for order.',
-					'> Possible return of unnecessary information',
-					'> Possible disintegration of data output'
-				)
-			);
+			throw new Exception("Unsupported directionality supplied for order: " . $order);
 		
-		$this->secure('variable', $variable);
-		$this->secure('order', $order);
+		$this->variable = $variable;
+		$this->order = $order;
 	}
 	
-	public function getVariable() {return $this->secure('variable');}
-	public function getOrder() {return $this->secure('order');}
+	public function getVariable() {return $this->variable;}
+	public function getOrder() {return $this->order;}
 	
 }
 
 // Simple tokens (i.e.: table names, column names, etc.)
 
-class simpleToken extends cloud_base {
+class simpleToken {
+	
+	private $token;
 	
 	public function __construct($token) {
-		$this->secure('token', $token);
+		$this->token = $token;
 	}
 	
-	public function getToken() {return $this->secure('token');}
+	public function getToken() {return $this->token;}
 	
 }
 
-class simpleFunction extends cloud_base {
+class simpleFunction {
+	
+	private $name;
+	private $values;
 	
 	public function __construct($name, $values) {
-	
-		$this->secure('name', $name);
-		$this->secure('values', $values);
-		
+		$this->name = $name;
+		$this->values = $values;
 	}
 	
-	public function getName() {return $this->secure('name');}
-	public function getValues() {return $this->secure('values');}
+	public function getName() {return $this->name;}
+	public function getValues() {return $this->values;}
 	
 }
 
 
-class cloud_unescaped extends cloud_base {
+class cloud_unescaped {
+	
+	private $value;
 	
 	public function __construct($value) {
-		$this->secure('value', (string) $value);
+		$this->value = (string) $value;
 	}
-	public function __toString() {return $this->secure('value');}
-	public function getValue() {return $this->secure('value');}
+	public function __toString() {return $this->value;}
+	public function getValue() {return $this->value;}
 	
 }

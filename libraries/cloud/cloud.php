@@ -6,7 +6,7 @@
  *
  * PHP version 5
  *
- * Copyright 2010 Matt Basta
+ * Copyright 2011 Matt Basta
  * 
  * @author     Matt Basta <matt@serverboy.net>
  * 
@@ -27,29 +27,10 @@
 $location = dirname(__FILE__);
 define('CLOUD_PATH_PREFIX', $location . (strlen($location) > 1 ? '/' : ''));
 
-// Internal security can be super-secure, but possibly slow.
-define('CLOUD_INTERNAL_SECURITY', true);
-
-// Error handling
-define('CLOUD_LOG', CLOUD_PATH_PREFIX . '../../../log.txt');
-define('CLOUD_ALERT_UNSAFE_QUERIES', false);
-define('CLOUD_ALERT_WARNINGS', false);
-define('CLOUD_ALERT_ERRORS', true);
-define('CLOUD_BREAK_ON_UNSAFE_QUERIES', false);
-define('CLOUD_BREAK_ON_WARNINGS', false);
-define('CLOUD_BREAK_ON_ERRORS', true);
-define('CLOUD_ATTEMPT_UNSAFE_QUERIES', false);
-
-// Base class
-require(CLOUD_PATH_PREFIX . 'libraries/base.php');
-require(CLOUD_PATH_PREFIX . 'libraries/base_socket.php');
-require(CLOUD_PATH_PREFIX . 'libraries/logging.php');
-//require(CLOUD_PATH_PREFIX . 'libraries/cache.php');
 require(CLOUD_PATH_PREFIX . 'libraries/simpleObjects.php');
 // Universal DB Driver Interface
 require(CLOUD_PATH_PREFIX . 'libraries/driver.php');
 require(CLOUD_PATH_PREFIX . 'libraries/driver.table.php');
-require(CLOUD_PATH_PREFIX . 'libraries/returnobj.php');
 require(CLOUD_PATH_PREFIX . 'libraries/column.php');
 // Token class and helpers
 require(CLOUD_PATH_PREFIX . 'libraries/token.php');
@@ -57,7 +38,7 @@ require(CLOUD_PATH_PREFIX . 'libraries/token.php');
 
 class cloud {
 	
-	public static function create_db($type, $credentials) {
+	public static function connect($type, $credentials) {
 		
 		$db_path = CLOUD_PATH_PREFIX . 'engines/' . $type . '.driver.php';
 		require_once($db_path);
@@ -70,26 +51,37 @@ class cloud {
 		
 	}
 	
-	public static function _comp($x, $comparison, $y) {
-		return new comparison($x, $comparison, $y);
-	}
-	public static function _and() {
-		if(func_num_args() > 1)
-			return new logicCombinator(func_get_args(), 'AND');
-		else
-			return new logicCombinator(func_get_arg(0), 'AND');
-	}
-	public static function _st($token) {
-		if($token instanceof simpleToken)
-			return $token;
-		return new simpleToken($token);
-	}
-	public static function _or() {
-		if(func_num_args() > 1)
-			return new logicCombinator(func_get_args(), 'OR');
-		else
-			return new logicCombinator(func_get_arg(0), 'OR');
-	}
 	
+}
+
+function _comp($x, $comparison, $y) {
+	return new comparison($x, $comparison, $y);
+}
+function _and() {
+	if(func_num_args() > 1)
+		return new logicCombinator(func_get_args(), 'AND');
+	else {
+		$arg = func_get_arg(0);
+		if(is_array($arg))
+			return new logicCombinator($arg, 'AND');
+		else
+			return $arg;
+	}
+}
+function _st($token) {
+	if($token instanceof simpleToken)
+		return $token;
+	return new simpleToken($token);
+}
+function _or() {
+	if(func_num_args() > 1)
+		return new logicCombinator(func_get_args(), 'OR');
+	else {
+		$arg = func_get_arg(0);
+		if(is_array($arg))
+			return new logicCombinator($arg, 'OR');
+		else
+			return $arg;
+	}
 }
 

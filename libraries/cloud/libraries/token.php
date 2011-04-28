@@ -6,7 +6,7 @@
  *
  * PHP version 5
  *
- * Copyright 2010 Matt Basta
+ * Copyright 2011 Matt Basta
  * 
  * @author     Matt Basta <matt@serverboy.net>
  * 
@@ -24,87 +24,76 @@
  * 
  */
 
-class cloud_token extends cloud_base {
-	/**
-	 * Secure variables:
-	 *  table	- Database table
-	 *   > A database table object
-	 *  index	- Table index
-	 *   > An array, consider a conditional array providing an intersection
-	 *  data	- Currently available column data
-	 *   > An array, contains cached remote values for the row
-	 *  fetched	- Has column data been fetched
-	 *   > Boolean, describes whether the data has been downloaded yet
-	 */
+class cloud_token {
 	
-	public function __construct($driver, $table, $index, $values = '') {
+	private $table;
+	private $index_name;
+	private $index;
+	private $data;
+	private $fetched = false;
+	
+	public function __construct($table, $index_name, $index, $values = '') {
 		// Securely store the database information
-		self::secure( 'driver',		$driver );
-		self::secure( 'table',		$table );
-		self::secure( 'index',		$index );
+		$this->table = $table;
+		$this->index_name = $index_name;
+		$this->index = $index;
 		
-		if(empty($values))
-			self::secure('fetched', false);
-		else {
-			self::secure('fetched', true);
-			self::secure('data', $values);
+		if(!empty($values)) {
+			$this->fetched = true;
+			$this->data = $values;
 		}
 	}
 	
 	// Basic CRUD functions (excluding creation; token already exists!)
 	public function __get($name) {
-		if(self::secure('fetched')) {
-			$data = self::secure('data');
+		if($this->fetched) {
+			return $this->data[$name];
 		} else {
-			$driver = self::secure('driver');
-			$table = self::secure('table');
-			
-			$data = $table->fetch(array('_primary_key' => self::secure('index')), FETCH_SINGLE_ARRAY);
-			self::secure('data', $data);
-			self::secure('fetched', true);
+			$data = $this->table->fetch(array($this->index_name => $this->index), FETCH_SINGLE_ARRAY);
+			$this->data = $data;
+			$this->fetched = true;
 		}
 		return $data[$name];
 	}
+	
 	public function getValue($name) {return $this->__get($name);}
+	
 	public function getBoolValue($name) {
 		$val = $this->getValue($field);
 		return !(empty($val) || $val === "0" || $val === 0);
 	}
+	
 	public function __set($name, $value) {
-		
-		// Get the database info
-		$table = self::secure('table');
-		$index = self::secure('index');
-		
-		// Perform the query
-		$table->update_row(
-			$index,
+		$this->table->update(
+			array( $this->index_name => $this->index ),
 			array( $name => $value )
 		);
 		
-		// Reset the value within the secure storage for caching's sake
-		$data = self::secure('data');
-		$data[$name] = $value;
-		self::secure('data', $data);
+		$this->data[$name] = $value;
 	}
+	
 	public function setValues($params) {
-		// TODO : Optimize this and the above function to use fewer DB queries when running a large set of updated columns.
-		foreach($params as $param=>$value)
-			$this->__set($param, $value);
+		$this->table->update(
+			array( $this->index_name => $this->index ),
+			$params
+		);
+		
+		foreach($params as $key=>$value)
+			$this->data[$key] = $value;
 	}
+	
 	public function destroy() {
-		$table = self::secure('table');
-		$table->delete(
+		$this->table->delete(
 			array(
-				'_primary_key' => self::secure('index')
+				$this->index_name => $this->index
 			),
 			1
 		);
 		
-		self::secure('fetched', false);
-		self::secure('table', false, true);
-		self::secure('index', false, true);
+		$this->fetched = false;
+		$this->table = null;
+		$this->index_name = null;
+		$this->index = null;
 		
 	}
-	
 }

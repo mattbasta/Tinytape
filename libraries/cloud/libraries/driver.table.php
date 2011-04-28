@@ -7,7 +7,7 @@
  *
  * PHP version 5
  *
- * Copyright 2010 Matt Basta
+ * Copyright 2011 Matt Basta
  * 
  * @author     Matt Basta <matt@serverboy.net>
  * 
@@ -25,7 +25,6 @@
  * 
  */
 
-define('FETCH_RESULT', 0); // A result object
 define('FETCH_COUNT', 1); // An integer count
 define('FETCH_ARRAY', 2); // An array of values from the database
 define('FETCH_SINGLE_ARRAY', 3); // A single array of values from a row in the database
@@ -38,30 +37,21 @@ define('FETCH_SINGLE', 8); // A single value
 interface cloud_driver_table {
 	
 	public function __construct($connection, $driver, $name);
-	public function destroy();
-	
 	
 	public function get_driver();
 	
 	public function get_columns();
 	public function get_primary_column();
-	public function create_column($position, $column);
-	public function delete_column($name);
 	
 	public function get_length(); // To return an integer row count
 	
-	// $id should be the primary key for the row
 	// Functions should return the token for the row
-	public function insert_row($id, $values);
-	public function upsert_row($id, $values);
-	public function update_row($id, $values);
-	public function delete_row($id);
+	public function insert($values);
 	
 	// Safety first...default to False
-	public function update($conditions = false, $values = '', $limit = -1, $order = '');
-	public function delete($conditions = false, $limit = -1, $order = '');
+	public function update($conditions, $values, $limit = -1, $order = '');
+	public function delete($conditions, $limit = -1, $order = '');
 	
-	// The pseudocolumn "_primary_key" should be used to denote the primary key
 	/*
 	Params
 		- Columns
@@ -70,8 +60,8 @@ interface cloud_driver_table {
 		- Order
 		- Array ID (Expects column name)
 	*/
-	public function fetch($conditions = '', $return = 0, $params = '');
-	public function fetch_exists($conditions = '');
+	public function fetch($conditions, $return, $params = '');
+	public function fetch_exists($conditions);
 	
 	// Improve performance by sending write operations as a single transaction
 	public function start_write_transaction();

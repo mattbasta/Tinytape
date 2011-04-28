@@ -6,7 +6,7 @@
  *
  * PHP version 5
  *
- * Copyright 2010 Matt Basta
+ * Copyright 2011 Matt Basta
  * 
  * @author     Matt Basta <matt@serverboy.net>
  * 
@@ -24,14 +24,14 @@
  * 
  */
 
-abstract class cloud_driver extends cloud_base {
+abstract class cloud_driver {
 	
 	private $hasInit = false; // Should be set to true on init
+	private $credentials;
 	
 	// Constructors and Destructors
 	public function __construct($credentials) {
-		// Securely stuff away our credentials
-		self::readonly('credentials', $credentials);
+		$this->credentials = $credentials;
 		// Initialize the database driver
 		
 		return $this->init($credentials);
@@ -47,34 +47,30 @@ abstract class cloud_driver extends cloud_base {
 	
 	
 	// Table functions
-	abstract public function create_table($name, $columns);
 	abstract public function get_table_list();
 	abstract public function get_table($name);
-	public function delete_table($name) {
-		// Retrieve the table to delete
-		$table = $this->get_table($name);
-		// Destroy it
-		$table->destroy();
-	}
+	public function table($name) {return $this->get_table($name);} // Simple alias
 	
 	
 	// Security Functions
-	public function escape($data, $no_quotes = false) {
+	public function escape($data) {
 		switch(true) {
 			case is_integer($data):
-				return $this->escapeInteger($data, $no_quotes);
+				return $this->escapeInteger($data);
 			case is_float($data):
-				return $this->escapeFloat($data, $no_quotes);
+				return $this->escapeFloat($data);
 			case is_string($data):
-				return $this->escapeString($data, $no_quotes);
+				return $this->escapeString($data);
 			case is_bool($data):
 				return $this->escapeBool($data);
 			case is_array($data):
-				return $this->escapeArray($data, $no_quotes);
+				return $this->escapeList($data);
 			case is_object($data):
 				switch(true) {
+					case $data instanceof cloud_column:
+						return $this->prepareSimpleToken($data->name);
 					case $data instanceof simpleToken:
-						return $this->prepareSimpleToken($data, $no_quotes);
+						return $this->prepareSimpleToken($data);
 					case $data instanceof logicCombinator:
 						return $this->prepareCombinator($data);
 					case $data instanceof comparison:
@@ -87,21 +83,15 @@ abstract class cloud_driver extends cloud_base {
 		}
 	}
 	abstract public function escapeBool($data); // There should never be quotes with boolean
-	abstract public function escapeString($data, $no_quotes = false);
-	abstract public function escapeInteger($data, $no_quotes = false);
-	abstract public function escapeFloat($data, $no_quotes = false); // Helps out with number padding
-	abstract public function escapeArray($data, $type = 0, $no_quotes = false); // Helps with delimited values
-	/*
-		Escape Array Types:
-		- 0 :	Nondelimited
-		- 1 :	Delimited
-		- 2 :	Comparison
-	*/
+	abstract public function escapeString($data);
+	abstract public function escapeInteger($data);
+	abstract public function escapeFloat($data); // Helps out with number padding
 	
-	abstract public function prepareSimpleToken($token, $no_quotes = false);
+	abstract public function escapeList($array, $commas = true, $escape = true); // A list of tokens (i.e.: x, y, z)
+	
+	abstract public function prepareSimpleToken($token);
 	abstract public function prepareCombinator($combinator);
 	abstract public function prepareComparison($comparison);
 	abstract public function prepareListOrder($listorder);
-	
 	
 }

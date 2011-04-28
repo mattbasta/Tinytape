@@ -6,7 +6,7 @@
  *
  * PHP version 5
  *
- * Copyright 2010 Matt Basta
+ * Copyright 2011 Matt Basta
  * 
  * @author     Matt Basta <matt@serverboy.net>
  * 
@@ -25,33 +25,26 @@
  */
 
 class mysql_driver extends cloud_driver {
-	
-	public $primary_key = '';
+	private $connection;
 	
 	public function init($credentials) {
-		
 		// Connect
 		$connection = new mysqli($credentials['server'], $credentials['username'], $credentials['password']);
-		$connection->set_charset("utf8");
 		
 		// Select the database
 		if(!empty($credentials['database']))
 			$connection->select_db($credentials['database']);
 		
 		// Store the connection
-		$this->secure('connection', $connection);
-		
+		$this->connection = $connection;
 	}
+	
 	public function close() {
-		$connection = $this->secure('connection');
-		@$connection->close();
+		@$this->connection->close();
 	}
 	
 	// Table Functions
-	
 	public function create_table($name, $columns) {
-		$connection = $this->secure('connection');
-		
 		$query = "CREATE TABLE {$this->prepareSimpleToken($name)} (";
 		$cols = array();
 		$indices = array();
@@ -60,8 +53,8 @@ class mysql_driver extends cloud_driver {
 			$col .= ' ' . strtoupper($column->type);
 			if($column->length !== false)
 				$col .= "({$column->length})";
-			if($column->def !== false)
-				$col .= ' DEFAULT ' . $this->escape($column->def);
+			if($column->_default !== false)
+				$col .= ' DEFAULT ' . $this->escape($column->_default);
 			if($column->extra !== false)
 				$col .= ' ' . $column->extra;
 			if($column->key !== false) {
@@ -86,11 +79,13 @@ class mysql_driver extends cloud_driver {
 		$query .= implode(', ', $cols);
 		$query .= ");";
 		
-		$connection->query($query);
+		if(defined("DEBUG"))
+			echo "$query\n";
+		
+		$this->connection->query($query);
 	}
 	public function get_table_list() {
-		$connection = $this->secure('connection');
-		$result = $connection->query('SHOW TABLES;');
+		$result = $this->connection->query('SHOW TABLES;');
 		
 		$tab_out = array();
 		while($table = $result->fetch_array())
@@ -98,107 +93,65 @@ class mysql_driver extends cloud_driver {
 		
 		return $tab_out;
 	}
+	
 	public function get_table($name) {
-		// TODO : Check for existance.
-		return new mysql_driver_table($this->secure('connection'), $this, $name);
+		return new mysql_driver_table($this->connection, $this, $name);
 	}
 	
 	
 	public function escapeBool($data) {return $data ? 1 : 0;}
-	public function escapeString($data, $no_quotes = false) {
-		$connection = $this->secure('connection');
-		
-		if(empty($data))
-			return $no_quotes ? '' : '""';
-		
-		return $no_quotes ? $data : '"' . $connection->real_escape_string($data) . '"';
+	public function escapeString($data) {
+		return '"' . $this->connection->real_escape_string($data) . '"';
 	}
-	public function escapeInteger($data, $no_quotes = false) {return (int)$data;}
-	public function escapeFloat($data, $no_quotes = false) {return (float)$data;}
-	/*
-		Escape Array Types:
-		- 0 :	Nondelimited
-		- 1 :	Delimited
-		- 2 :	Comparison
-	*/
-	public function escapeArray($data, $type = 0, $no_quotes = false) {
-		if(!is_array($data))
-			return $this->escape($data, $no_quotes);
-		
-		switch($type) {
-			case 0:
-				$delimiter = ' ';
-				break;
-			case 1:
-				$delimiter = ', ';
-				break;
-			case 2:
-				$delimiter = ' AND ';
-				break;
-		}
+	public function escapeInteger($data) {return (int)$data;}
+	public function escapeFloat($data) {return (float)$data;}
+	
+	public function escapeList($array, $commas = true, $escape = true) {
+		if(!is_array($array))
+			return $escape ? $this->escape($array) : $array;
 		
 		$final = array();
-		foreach($data as $key => $value) {
-			$build = '';
-			$orig_type = gettype($value);
-			
-			if(is_string($value))
-				$value = trim($value);
-			
-			$value = $this->escape($value, $no_quotes);
-			
-			switch($type) {
-				case 1:
-				case 0:
-					
-					if(is_string($key))
-						$build = "{$this->prepareSimpleToken($key)} = $value";
-					else
-						$build = $value;
-					break;
-				case 2:
-					switch($orig_type) {
-						case 'integer':
-						case 'string':
-						case 'double':
-						case 'float':
-						case 'boolean':
-							if(is_string($key)) {
-								if(!empty($this->primary_key) && $key == '_primary_key')
-									$key = $this->primary_key;
-								$build = "{$this->prepareSimpleToken($key)} = $value";
-							} else
-								$build = 'TRUE';
-							break;
-						case 'array':
-						case 'object':
-							$build = $value;
-					}
-					break;
-			}
-			
-			$final[] = $build;
-			
+		foreach($array as $key=>$item) {
+			$build = $escape ? $this->escape($item) : $item;
+			if(is_string($key))
+				$final[] = $this->prepareSimpleToken($key) . " = " . $build;
+			else
+				$final[] = $build;
 		}
-		
-		return implode($delimiter, $final);
-		
+		return implode($commas ? ", " : " ", $final);
 	}
 	
-	public function prepareSimpleToken($token, $no_quotes = false) {
+	public function escapeConditions($array) {
+		if(!is_array($array))
+			return $this->escape($array); # We can force this for conditions
+		
+		$final = array();
+		foreach($array as $key=>$item) {
+			if(is_object($item)) {
+				$final[] = $this->escape($item);
+				continue;
+			}
+			
+			if(is_string($key))
+				$final[] = $this->prepareSimpleToken($key) . " = " . $this->escape($item);
+			elseif(is_array($item))
+				$final[] = $this->escapeConditions($item);
+		}
+		return implode(" AND ", $final);
+	}
+	
+	public function prepareSimpleToken($token) {
 		if($token instanceof simpleToken)
 			$tokentext = $token->getToken();
 		else
 			$tokentext = $token;
-		if(!empty($this->primary_key) && $tokentext == '_primary_key')
-			$tokentext = $this->primary_key;
 		$tokentext = str_replace("\n", '', $tokentext);
 		$tokentext = str_replace("\r", '', $tokentext);
 		$tokentext = str_replace("\t", '', $tokentext);
-		if(!$no_quotes)
-			$tokentext = '`' . str_replace('`', "'", $tokentext) . '`';
+		$tokentext = '`' . str_replace('`', "'", $tokentext) . '`';
 		return $tokentext;
 	}
+	
 	public function prepareCombinator($combinator) {
 		$logic = strtoupper($combinator->getLogic());
 		$terms = $combinator->getTerms();
@@ -232,56 +185,59 @@ class mysql_driver extends cloud_driver {
 						
 					$backtrace = debug_backtrace(true);
 					$caller = $backtrace[ min(count($backtrace), 2) ]['function'];
-					if($caller == 'prepareCombinator' || $caller == 'escapeArray')
+					if($caller == 'prepareCombinator' || $caller == 'escapeConditions')
 						return '(' . implode(" $logic ", $build) . ')';
 					else
 						return implode(" $logic ", $build);
 			}
 		}
 	}
+	
 	public function prepareComparison($comparison) {
 		return "{$this->escape($comparison->getObject1())} {$comparison->getOperation()} {$this->escape($comparison->getObject2())}";
 	}
+	
 	public function prepareListOrder($listorder) {
 		return $this->prepareSimpleToken($listorder->getVariable()) . ' ' . $listorder->getOrder();
 	}
-	
 }
 
 
-class mysql_driver_table extends cloud_base implements cloud_driver_table {
+class mysql_driver_table implements cloud_driver_table {
 	
-	public function __construct($connection, $driver, $name) {
-		$this->secure('connection', $connection);
-		$this->secure('driver', $driver);
-		$this->secure('name', $name);
+	private $connection;
+	private $driver;
+	private $name;
+	private $primary_cache;
+	
+	private $column_cache;
+	
+	public function __construct($connection, $driver, $name, $primary="") {
+		$this->connection = $connection;
+		$this->driver = $driver;
+		$this->name = $name;
+		if(!empty($primary))
+			$this->primary_cache = $primary;
 	}
 	
-	public function destroy() {
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$name = $this->secure('name');
+	public function drop() {
+		$this->connection->query("DROP TABLE " . $this->driver->escape(_st($this->name)));
 		
-		$connection->query('DROP TABLE ' . $driver->prepareSimpleToken($name) . ';');
-		
-		$this->secure('connection', false, true);
-		$this->secure('driver', false, true);
-		$this->secure('name', false, true);
-		
+		$this->connection = null;
+		$this->driver = null;
+		$this->name = null;
+		$this->primary_cache = null;
+		$this->column_cache = null;
 	}
 	
-	public function get_driver() {return $this->secure('driver');}
+	public function get_driver() {return $this->driver;}
 	
 	public function get_columns() {
+		if($this->column_cache) return $this->column_cache;
 		
-		$columns = $this->secure('column_cache');
-		if($columns) return $columns;
-		
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$name = $this->secure('name');
-		
-		$query = $connection->query('DESCRIBE ' . $driver->prepareSimpleToken($name) . ';');
+		$query = $this->connection->query('DESCRIBE ' . $this->driver->prepareSimpleToken($this->name) . ';');
+		if(!$query)
+			throw new Exception("Table does not exist");
 		
 		$columns = array();
 		while($result = $query->fetch_array()) {
@@ -298,286 +254,164 @@ class mysql_driver_table extends cloud_base implements cloud_driver_table {
 			$columns[$result[0]] = $column;
 		}
 		
-		$this->secure('column_cache', $columns);
+		$this->column_cache = $columns;
 		return $columns;
-		
 	}
+	
 	public function get_primary_column() {
-		$pcache = $this->secure('primary_cache');
-		if($pcache) return $pcache;
-		
+		if($this->primary_cache) return $this->primary_cache;
+
 		$columns = $this->get_columns();
 		foreach($columns as $column) {
 			if($column->key == 'PRI') {
-				$this->secure('primary_cache', $column);
+				$this->primary_cache = $column;
 				return $column;
 			}
 		}
 	}
-	public function create_column($position, $column) {
-		$columns = $this->secure('column_cache', false, true);
-		$columns = $this->secure('primary_cache', false, true);
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$name = $this->secure('name');
-		
-		if($position == 0)
-			$position = 'FIRST';
-		elseif(!empty($position))
-			$position = 'AFTER ' . $driver->prepareSimpleToken($position);
-		
-		$length = $column->length;
-		if($length <= 0)
-			$length = '';
-		else
-			$length = "($length)";
-		$query = "ALTER TABLE {$driver->prepareSimpleToken($name)} ADD COLUMN {$column->name} {$column->type}$length $position;";
-		
-		$connection->query($query);
-		
-	}
-	public function delete_column($name) {
-		$columns = $this->secure('column_cache', false, true);
-		$columns = $this->secure('primary_cache', false, true);
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$tname = $this->secure('name');
-		
-		$connection->query("ALTER TABLE {$driver->prepareSimpleToken($tname)} DROP COLUMN {$driver->prepareSimpleToken($name)};");
-	}
 	
 	public function get_length() {
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$tname = $this->secure('name');
+		$vana = ini_set('mysql.trace_mode','Off');
 		
-		$pcol = $this->get_primary_column();
+		$temp = $this->connection->query("SELECT SQL_CALC_FOUND_ROWS * FROM {$this->driver->prepareSimpleToken($this->name)} LIMIT 1");
+		$result = $this->connection->query("SELECT FOUND_ROWS()");
+		$total = $result->fetch_row();
 		
-		$result = $connection->query("SELECT {$pcol->name} FROM {$driver->prepareSimpleToken($tname)};");
+		ini_set('mysql.trace_mode',$vana);
 		
-		$count = $result->num_rows;
-		return $count;
+		return $total[0];
 	}
 	
-	public function insert_row($id, $values) {
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$name = $this->secure('name');
-		
-		$cols = $this->get_columns();
-		$pcol = $this->get_primary_column();
-		$driver->primary_key = $pcol->name;
-		
-		$values[$pcol->name] = (string)$id;
+	public function insert($values) {
+		$driver = $this->driver;
 		
 		$keys = array_keys($values);
 		$values = array_values($values);
 		
-		//$keycount = count($keys);
-		foreach($keys as &$key) {
-			$key = cloud::_st((string)$key);
-		}
+		foreach($keys as &$key)
+			$key = _st((string)$key);
 		
-		$query = "INSERT INTO {$driver->prepareSimpleToken($name)} ({$driver->escapeArray($keys, 1)}) VALUES ({$driver->escapeArray($values, 1)});";
-		if(defined("DEBUG"))
-			echo "INSERTROW>>$query";
-		$query = $connection->query($query);
+		$query = "INSERT INTO {$driver->prepareSimpleToken($this->name)} ({$driver->escapeList($keys)}) VALUES ({$driver->escapeList($values)});";
+		$query = $this->connection->query($query);
 		
-		$driver->primary_key = '';
+		return $this->connection->insert_id;
 		
-		return $connection->insert_id;
-		
-	}
-	public function upsert_row($id, $values) {
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$name = $this->secure('name');
-		
-		$cols = $this->get_columns();
-		$pcol = $this->get_primary_column();
-		$driver->primary_key = $pcol->name;
-		
-		$values[$pcol] = $id;
-		
-		$upsertvalues = $values;
-		unset($upsertvalues['pcol']);
-		
-		$query = "INSERT INTO {$driver->prepareSimpleToken($name)} VALUES ({$driver->escapeArray($values, 1)}) ON DUPLICATE KEY UPDATE {$driver->escapeArray($upsertvalues, 1)};";
-		
-		$connection->query($query);
-		$driver->primary_key = '';
-		
-		return $connection->insert_id;
-		
-	}
-	public function update_row($id, $values) {
-		return $this->update(
-			array(
-				'_primary_key' => $id
-			),
-			$values,
-			1
-		);
 	}
 	
-	public function update($conditions = false, $values = '', $limit = -1, $order = '') {
+	public function update($conditions, $values, $limit = -1, $order = '') {
 		
 		if(empty($conditions))
 			return false;
 		
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$name = $this->secure('name');
+		$driver = $this->driver;
 		
-		$pcol = $this->get_primary_column();
-		$driver->primary_key = $pcol->name;
-		
-		$query = "UPDATE {$driver->prepareSimpleToken($name)} SET " . $driver->escapeArray($values, 1);
+		$query = "UPDATE {$driver->prepareSimpleToken($this->name)} SET " . $driver->escapeList($values);
 		if($conditions !== true)
-			$query .= " WHERE " . $driver->escapeArray($conditions, 2);
+			$query .= " WHERE " . $driver->escapeConditions($conditions);
 		
-		if(!empty($order))
-			$query .= " ORDER BY {$driver->escapeArray($order, 1)}";
 		
 		if($limit > -1) {
+			if(!empty($order))
+				$query .= " ORDER BY {$driver->escapeList($order)}";
 			$limit = (int)$limit;
 			$query .= " LIMIT $limit";
 		}
 		
 		$query .= ';';
-		$connection->query($query);
-		
-		$driver->primary_key = '';
-		
-		
-	}
-	public function delete($conditions = false, $limit = -1, $order = '') {
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$name = $this->secure('name');
-		
-		$pcol = $this->get_primary_column();
-		$driver->primary_key = $pcol->name;
-		
-		$query = "DELETE FROM {$driver->prepareSimpleToken($name)} WHERE " . $driver->escapeArray($conditions, 2);
-		
-		if(!empty($order))
-			$query .= " ORDER BY {$driver->escapeArray($order, 1)}";
-		
-		if($limit > -1) {
-			$limit = (int)$limit;
-			$query .= " LIMIT $limit";
-		}
-		
-		$query .= ';';
-		$connection->query($query);
-		
-		$driver->primary_key = '';
-		
-	}
-	public function delete_row($id) {
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$name = $this->secure('name');
-		
-		$pcol = $this->get_primary_column();
-		
-		$query = "DELETE FROM {$driver->prepareSimpleToken($name)} WHERE {$driver->prepareSimpleToken($pcol->name)} = {$driver->escape($id)};";
-		
-		$connection->query($query);
-		
+		$this->connection->query($query);
 	}
 	
-	// The pseudocolumn "_primary_key" should be used to denote the primary key
-	/*
-	Params
-		- Columns
-		- Limit
-		- Offset
-		- Order
-		- Array ID (Expects column name)
-	*/
-	public function fetch($conditions = '', $return = 0, $params = '') {
-		$connection = $this->secure('connection');
-		$driver = $this->secure('driver');
-		$name = $this->secure('name');
+	public function delete($conditions, $limit = -1, $order = '') {
+		$driver = $this->driver;
+		
+		$query = "DELETE FROM {$driver->prepareSimpleToken($this->name)} WHERE " . $driver->escapeConditions($conditions);
+		
+		if($limit > -1) {
+			if(!empty($order))
+				$query .= " ORDER BY {$driver->escapeList($order)}";
+			$limit = (int)$limit;
+			$query .= " LIMIT $limit";
+		}
+		
+		$query .= ';';
+		$this->connection->query($query);
+	}
+	
+	public function fetch($conditions, $return, $params = '') {
+		$driver = $this->driver;
 		
 		// Tell the driver what the primary key is so we can escape it out
 		$pcol = $this->get_primary_column();
-		$driver->primary_key = $pcol->name;
 		
 		if(!is_array($params))
 			$params = array();
 		$columns = isset($params['columns']) ? $params['columns'] : '*';
-		$limit = isset($params['limit']) ? $params['limit'] : -1;
-		$offset = isset($params['offset']) ? $params['offset'] : 0;
+		$limit = isset($params['limit']) ? (int)$params['limit'] : -1;
+		$offset = isset($params['offset']) ? (int)$params['offset'] : 0;
 		$order = isset($params['order']) ? $params['order'] : '';
 		$grouping = isset($params['grouping']) ? $params['grouping'] : '';
-		$arrid = isset($params['arrayid']) ? $params['arrayid'] : $pcol->name;
+		$arrid = isset($params['arrayid']) ? $params['arrayid'] : $this->get_primary_column()->name;
 		
-		if($return == 6 || $return == 7) { // Unloaded tokens don't need any values.
-			$columns = new simpleToken('_primary_key');
-			$columns = $driver->prepareSimpleToken($columns);
+		if($return == FETCH_UNLOADED_TOKENS || $return == FETCH_SINGLE_UNLOADED_TOKEN || $return == FETCH_COUNT) { // Unloaded tokens don't need any values.
+			$columns = $driver->escape($pcol);
 		} else {
 			if(is_array($columns)) {
-				if($return == 8) {
-					if(count($columns) > 8)
+				if($return == FETCH_SINGLE) {
+					if(count($columns) > 1)
 						$columns = $columns[0];
 					if(!($columns instanceof simpleToken))
-						$columns = cloud::_st($columns);
-					cloud_logging::warning("FETCH_SINGLE command passed with multiple parameters.");
+						$columns = _st($columns);
 				} else {
-					foreach($columns as $key => &$value) {
-						if(	$value === '_primary_key' ||
-							($value instanceof simpleToken && $value->getToken() == '_primary_key')) {
-							$columns[$key] = $pcol->name;
-							continue;
+					if($return != FETCH_COUNT && $return != FETCH_SINGLE && $return != FETCH_SINGLE_ARRAY && $return != FETCH_SINGLE_TOKEN) {
+						$found_rowid = false;
+						foreach($columns as $col) {
+							if((is_string($col) && $col == $arrid) || ($col instanceof simpleToken && $col->getToken() == $arrid)) {
+								$found_rowid = true;
+								break;
+							}
 						}
-						if(is_string($value))
-							$value = cloud::_st($value);
+						if(!$found_rowid)
+							$columns[] = _st($arrid);
 					}
-					if(!in_array($pcol->name, $columns))
-						$columns[] = cloud::_st($pcol->name);
+					foreach($columns as $key => &$value)
+						if(is_string($value))
+							$value = _st($value);
 				}
 			} elseif(is_string($columns) && $columns != '*')
-				$columns = cloud::_st($columns);
+				$columns = _st($columns);
 			if(!is_string($columns))
-				$columns = $driver->escapeArray($columns, 1);
+				$columns = $driver->escapeList($columns);
 		}
 		
-		$query = "SELECT $columns FROM {$driver->prepareSimpleToken($name)}";
+		$query = "SELECT $columns FROM {$driver->prepareSimpleToken($this->name)}";
 		if(!empty($conditions))
-			$query .= " WHERE {$driver->escapeArray($conditions, 2)}";
+			$query .= " WHERE {$driver->escapeConditions($conditions)}";
 		if(!empty($grouping))
-			$query .= " GROUP BY {$driver->escapeArray($grouping, 1)}";
+			$query .= " GROUP BY {$driver->escapeList($grouping)}";
 		if(!empty($order))
-			$query .= " ORDER BY {$driver->escapeArray($order, 1)}";
+			$query .= " ORDER BY {$driver->escapeList($order)}";
 		
-		if($return == 3 || $return == 5 || $return == 7 || $return == 8)
+		if($return == FETCH_SINGLE_ARRAY || $return == FETCH_SINGLE_TOKEN ||
+		   $return == FETCH_SINGLE_UNLOADED_TOKEN || $return == FETCH_SINGLE)
 			$limit = 1;
 		
 		if($limit > -1 || $offset > 0) {
 			if($limit == -1) // As per the MySQL docs, use a REALLY BIG NUMBER!
 				$limit = '18446744073709551615';
-			else
-				$limit = (int)$limit;
 			
 			$query .= " LIMIT $limit";
-			if($offset > 0) {
-				$offset = (int)$offset;
-				$query .= " OFFSET {$offset}";
-			}
+			if($offset > 0)
+				$query .= " OFFSET $offset";
 		}
 		
 		$query .= ';';
 		
 		if(defined("DEBUG"))
-			echo $query;
+			echo $query, "\n";
 		
-		$driver->primary_key = '';
-		
-		$result = $connection->query($query);
-		echo $connection->error;
+		$result = $this->connection->query($query);
+		if(defined("DEBUG"))
+			echo $this->connection->error, "\n";
 		$output = false;
 		
 		// Nothing is returned
@@ -585,16 +419,7 @@ class mysql_driver_table extends cloud_base implements cloud_driver_table {
 			if($result === false || $result->num_rows == 0)
 				return false;
 		
-		
-		
 		switch($return) {
-			case FETCH_RESULT: // Result object
-				$output = new mysql_return( array(
-					'driver' => $driver,
-					'table' => $this,
-					'query' => $result
-				));
-				break;
 			case FETCH_COUNT: // Row count
 				$output = $result->num_rows;
 				break;
@@ -613,10 +438,10 @@ class mysql_driver_table extends cloud_base implements cloud_driver_table {
 				$output = array();
 				while($row = $result->fetch_array(MYSQLI_ASSOC)) {
 					$output[$row[$arrid]] = new cloud_token(
-						$driver,
 						$this,
+						$pcol->name,
 						$row[$pcol->name],
-						$return == 4 ? $row : ''
+						$return == FETCH_TOKENS ? $row : ''
 					);
 				}
 				break;
@@ -626,10 +451,10 @@ class mysql_driver_table extends cloud_base implements cloud_driver_table {
 					return false;
 				$row = $result->fetch_array(MYSQLI_ASSOC);
 				$output = new cloud_token(
-					$driver,
 					$this,
+					$pcol->name,
 					$row[$pcol->name],
-					$return == 5 ? $row : ''
+					$return == FETCH_SINGLE_TOKEN ? $row : ''
 				);
 				break;
 			case FETCH_SINGLE: // Single Value
@@ -639,16 +464,15 @@ class mysql_driver_table extends cloud_base implements cloud_driver_table {
 		}
 		
 		return $output;
-		
 	}
 	
-	public function fetch_exists($conditions = '') {
+	public function fetch_exists($conditions) {
 		return $this->fetch(
 			$conditions,
 			FETCH_COUNT,
 			array(
-				'columns' => '_primary_key',
-				'limit' => 1
+				'limit' => 1,
+				'columns' => $this->primary_cache ? $this->primary_cache->name : '*'
 			)
 		) > 0;
 	}
@@ -658,127 +482,3 @@ class mysql_driver_table extends cloud_base implements cloud_driver_table {
 	public function flush_write_transaction() { return false; }
 	
 }
-
-class mysql_return extends cloud_return {
-	
-	// State Functions
-	public function init($construct) {
-		// Store away the query object
-		$query =& $construct['query'];
-		$this->length = $query->num_rows;
-		$this->secure('query', $query);
-		
-		$this->secure('driver', $contruct['driver']);
-		$this->secure('table', $contruct['table']);
-	}
-	public function close() {}
-	
-	// Retrieval Functions
-	public function next_array() {
-		$query = $this->secure('query');
-		$this->pointer++;
-		return $query->fetch_array(MYSQLI_ASSOC);
-	}
-	public function next_token() {
-		$query = $this->secure('query');
-		$driver = $this->secure('driver');
-		$table = $this->secure('table');
-		
-		$this->pointer++;
-		$row_data = $query->fetch_array(MYSQLI_ASSOC);
-		
-		// TODO : Cache this?
-		$pcol = $table->get_primary_column();
-		
-		return new cloud_token(
-			$driver,
-			$table,
-			$row_data[$pcol->name],
-			$row_data
-		);
-	}
-	
-	// TODO : Remove code duplication
-	public function peek_array() {
-		$query = $this->secure('query');
-		$data = $query->fetch_array(MYSQLI_ASSOC);
-		$query->data_seek($this->pointer);
-		return $data;
-	}
-	public function peek_token() {
-		$query = $this->secure('query');
-		$driver = $this->secure('driver');
-		$table = $this->secure('table');
-		
-		$row_data = $query->fetch_array(MYSQLI_ASSOC);
-		$query->data_seek($this->pointer);
-		
-		// TODO : Cache this?
-		$pcol = $table->get_primary_column();
-		
-		return new cloud_token(
-			$driver,
-			$table,
-			$row_data[$pcol->name],
-			$row_data
-		);
-	}
-	
-	// Result Set Functions
-	public function rewind() {
-		$query = $this->secure('query');
-		$query->data_seek(0);
-		$this->pointer = 0;
-	}
-	public function skip($count = 1) {
-		$new_pointer = $this->pointer + $count;
-		if($new_pointer < 0 || $new_pointer >= $this->length)
-			return false; // TODO : Logging?
-		
-		$this->pointer = $new_pointer;
-		
-		$query = $this->secure('query');
-		$query->data_seek($this->pointer);
-	}
-	public function seek($index) {
-		if($index < 0 || $index >= $this->length)
-			return false; // TODO : Logging?
-		
-		$this->pointer = $index;
-		
-		$query = $this->secure('query');
-		$query->data_seek($index);
-		
-	}
-	public function slide($until) {
-		$query = $this->secure('query');
-		do {
-			$matches = true;
-			$row = $query->fetch_array(MYSQLI_ASSOC);
-			
-			foreach($until as $key=>$value) {
-				if($row[$key] != $value) {
-					$matches = false;
-					break;
-				}
-				// TODO : Virtualization for the comparison objects
-			}
-			
-			$this->pointer++;
-			if($this->pointer == $this->length)
-				return false;
-		} while(!$matches);
-		
-		$this->pointer--;
-		$query->data_seek($this->pointer);
-		return true;
-	}
-	public function remaining() {
-		return $this->length - $this->pointer;
-	}
-	public function size() {
-		return $this->length;
-	}
-	
-}
-
