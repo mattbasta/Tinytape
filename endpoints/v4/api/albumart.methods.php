@@ -2,6 +2,8 @@
 
 require(PATH_PREFIX . '/best.php');
 
+define("AA_CACHEVER", 2);
+
 class methods {
 	public function __default() {
 		
@@ -53,24 +55,25 @@ class methods {
 			
 			$url = "http://ws.audioscrobbler.com/2.0/?format=json&method=track.search&api_key=" . LASTFM_APIKEY . "&track=$title&artist=$artist&limit=1";
 			
-			if(!($json_data = $keyval->get("tt_aacache.$url.$size")) || isset($_GET["debug"]))
-				$keyval->set("tt_aacache.$url", $json_data = file_get_contents($url));
+			if(!($json_data = $keyval->get(AA_CACHEVER .".$url.$size")) || isset($_GET["debug"]))
+				$keyval->set(AA_CACHEVER . ".$url.$size", $json_data = file_get_contents($url));
 			
 			if(isset($_GET["debug"])) {
 				echo "J Data: $json_data";
-				return false;
 			}
 			
 			$json = json_decode($json_data, true);
 			
-			if($json["error"] ||
+			if(isset($json["error"]) ||
 			   empty($json["results"]) ||
-			   empty($json["results"]["trackmatches"]))
+			   empty($json["results"]["trackmatches"])) {
+				if(isset($_GET["debug"]))
+					echo "No matches";
 				return false;
-			else {
+			}else {
 				
 				$match = $json["results"]["trackmatches"]["track"];
-				if(empty($match["image"]) || strlen(trim($match["image"])) == 0)
+				if(empty($match["image"]))
 					return "/images/noart.jpg";
 				foreach($match["image"] as $image)
 					if($_REQUEST["size"] == $image["size"])
@@ -83,8 +86,8 @@ class methods {
 			
 			$url = "http://ws.audioscrobbler.com/2.0/?format=json&method=album.getInfo&api_key=" . LASTFM_APIKEY . "&album=$album&artist=$artist&limit=1";
 			
-			if(!($json_data = $keyval->get("tt_aacache.$url.$size")) || isset($_GET["debug"]))
-				$keyval->set("tt_aacache.$url", $json_data = file_get_contents($url));
+			if(!($json_data = $keyval->get(AA_CACHEVER . ".$url.$size")) || isset($_GET["debug"]))
+				$keyval->set(AA_CACHEVER . ".$url.$size", $json_data = file_get_contents($url));
 			
 			if(isset($_GET["debug"])) {
 				echo "J Data: $json_data";

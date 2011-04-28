@@ -7,6 +7,7 @@ function load_feed(username, type, t, id, offset, onload) {
 		"/api/feed/get_feed/" + escape(username) + "/" + type + (offset?"/"+offset:""),
 		function(data) {
 			$("#" + id).html(data.payload);
+			$('.addtotape,.simplebox').fancybox({"scrolling":false});
 			if(data.register)
 				player.register_all(data.register, data.append);
 			if(onload)

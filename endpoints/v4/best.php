@@ -33,7 +33,7 @@ function findBest($title, $artist, $album='') {
 function findAll($title, $artist, $album='', $exclude_existing=false, $master_id=null) {
 	global $keyval, $r;
 	
-	$mid = "tinytape/v4/best/all/" . sha1("$title/$artist/$album");
+	$mid = "tinytape/v4/best/all/" . sha1("$title/$artist/$album") . "/v2.1";
 	
 	if($output = $keyval->get($mid)) {
 		$decoded = json_decode($output, true);
@@ -59,6 +59,10 @@ function findAll($title, $artist, $album='', $exclude_existing=false, $master_id
 	
 	$qstrings = array(
 		$artist . ' ' . $title,
+		$artist . ' ' . $title . ' official',
+		$artist . ' ' . $title . ' hq',
+		$artist . ' ' . $title . ' radio edit',
+		$artist . ' ' . $title . ' radio version',
 		$artist . ' ' . $title . ' lyrics',
 		$title . ' ' . $artist,
 		$title
@@ -93,6 +97,8 @@ function findAll($title, $artist, $album='', $exclude_existing=false, $master_id
 			$id = explode(':', $id);
 			$id = $id[count($id) - 1];
 			
+			$version_title = $entry['title']['$t'];
+			
 			$resource_id = "youtube:$id";
 			if($exclude_existing && $r->sContains("tinytape_instances_$master_id", $resource_id))
 				continue;
@@ -113,8 +119,8 @@ function findAll($title, $artist, $album='', $exclude_existing=false, $master_id
 				continue;
 			
 			$result = array(
-				'title'=>$entry['title']['$t'],
-				'description'=>$entry['title']['$t'] . '; ' . $entry['content']['$t'],
+				'title'=>$version_title,
+				'description'=>$version_title . '; ' . $entry['content']['$t'],
 				'service_resource'=>$id,
 				"service"=>"youtube"
 			);
@@ -160,7 +166,7 @@ function findBestInstance($song_token) {
 			'columns'=>array(
 				'service',
 				'service_resource',
-				new cloud_unescaped('(acoustic * 2 + clean + live * 4 + remix * 4) AS `relevance`')
+				new cloud_unescaped('(acoustic * 2 + clean + live * 4 + remix * 4 + IF(LENGTH(version_name) > 0, 2, 0)) AS `relevance`')
 			),
 			'order'=>new listOrder('relevance', 'ASC')
 		)

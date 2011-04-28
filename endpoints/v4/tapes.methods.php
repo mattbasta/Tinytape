@@ -20,9 +20,6 @@ class methods {
 		
 		view_manager::set_value("TITLE", "Create a new tape");
 		view_manager::set_value("AJAX", $ajax = !empty($ajax));
-		$ajax = !$ajax;
-		if($ajax)
-			view_manager::add_view(VIEW_PREFIX . "shell");
 		view_manager::add_view(VIEW_PREFIX . "tapes/new_bare");
 			
 		if($ajax)

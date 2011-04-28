@@ -6,12 +6,12 @@ $db = cloud::create_db(
 		'username'=>'com_tinytape',
 		'password'=>'RE^@DcH5fZ%6t4g73(9C',
 		'database'=>'tinytape',
-		'server'=>'localhost'
+		'server'=>'192.168.140.217'
 	)
 );
 
 define("ENABLE_FACEBOOK", true);
-define("ENABLE_TWITTER", true);
+define("ENABLE_TWITTER", false);
 
 define("SEARCH_PROVIDER", "sphinx");
 define("REDIS_PREFIX", "tinytape_");

@@ -131,17 +131,17 @@ class methods {
 		$r->zIncrBy("tinytape_scores", 1, $username);
 		
 		if(ENABLE_FACEBOOK && !empty($_REQUEST["dofb"]) && $uid = $r->hGet("tinytape_facebook", $username)) {
-			$this->writetofb($post_text, $uid, $username);
+			@$this->writetofb($post_text, $uid, $username);
 			foreach($mentioned as $mention) {
 				if($r->sContains("tinytape_following_" . $session->username, $mention)
 				   && $men_uid = $r->hGet("tinytape_facebook", $mention)) {
-					$this->writetofb($post_text, $men_uid, $mention, $uid);
+					@$this->writetofb($post_text, $men_uid, $mention, $uid);
 				}
 			}
 		}
 		
 		if(ENABLE_TWITTER && !empty($_REQUEST["dotw"]) && $r->hGet("tinytape_twitter", $username))
-			$this->writetotw($post_text, $username);
+			@$this->writetotw($post_text, $username);
 		
 		header("Location: " . URL_PREFIX . "account");
 		return false;
