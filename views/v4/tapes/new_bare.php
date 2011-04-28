@@ -13,17 +13,9 @@ echo view_manager::render();
 	<label>Tape Name</label>
 	<input type="text" name="title" />
 	
-	<?php
-	if(view_manager::get_value("AJAX")) {
-		echo '<input type="hidden" name="color" id="color" value="#000000" />';
-	} else {
-	?>
 	<label>Color</label>
 	<input type="hidden" name="color" id="color" value="#000000" />
-	<div id="picker"></div>
-	<?php
-	}
-	?>
+	<div id="picker">click here to choose a color</div>
 	
 	<label>URL</label>
 	<p class="money"><span><?php echo URL_PREFIX; ?>tape/</span><input type="text" name="url" /></p>

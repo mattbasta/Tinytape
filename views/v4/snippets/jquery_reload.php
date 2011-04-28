@@ -8,8 +8,12 @@ if($onload)
 ?>
 $('.fancybox').fancybox();
 $('.addtotape,.simplebox').fancybox({"scrolling":false});
-if(picker = document.getElementById("picker"))
-	$(picker).farbtastic("#color");
+if(picker = document.getElementById("picker")) {
+	$("#picker").mlColorPicker({'onChange': function(val){
+		$("#picker").css("background-color", "#" + val);
+		$("#color").text("#" + val);
+	}});
+}
 	<?php
 if($onload)
 	echo "});";

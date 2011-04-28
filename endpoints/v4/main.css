@@ -187,69 +187,52 @@ form.addsong section label {
 form.addsong section input {display:inline;}
 
 
-/**
- * Farbtastic Color Picker 1.2
- * © 2008 Steven Wittens
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- */
-.farbtastic {
-  position: relative;
-}
-.farbtastic * {
-  position: absolute;
-  cursor: crosshair;
-}
-.farbtastic, .farbtastic .wheel {
-  width: 195px;
-  height: 195px;
-}
-.farbtastic .color, .farbtastic .overlay {
-  top: 47px;
-  left: 47px;
-  width: 101px;
-  height: 101px;
-}
-.farbtastic .wheel {
-  background: url(/scripts/farbtastic/wheel.png) no-repeat;
-  width: 195px;
-  height: 195px;
-}
-.farbtastic .overlay {
-  background: url(/scripts/farbtastic/mask.png) no-repeat;
-}
-.farbtastic .marker {
-  width: 17px;
-  height: 17px;
-  margin: -8px 0 0 -8px;
-  overflow: hidden; 
-  background: url(/scripts/farbtastic/marker.png) no-repeat;
-}
-.colorselector label {
-	margin-top:30px;
-	margin-bottom:-25px;
-	float:left;
-	text-align:right;
-	width:170px !important;
-}
-#color {
-	margin:0 auto;
-}
+/***************************************
+mlColorPicker
+***************************************/
+
 #picker {
-	margin:0 auto 30px;
-	width:200px;
+	float:left;
+	padding:0.5em;
+	border:1px dashed #000;
+}
+
+#mlColorPicker{
+	border:1px solid black;
+	background-color:#DDDDDD;
+	padding-bottom:5px;
+}
+
+#mlSelectedColorDiv{
+	float:left;
+	width:43px;
+	height:20px;
+	border:solid 1px black;
+	background-color:white;
+	margin:5px;
+}
+#mlSelectedColorText{
+	float:left;
+	width:60px;
+	border:solid 1px black;
+	font-size:small;
+	margin:5px;
+}
+#mlColors{
+	float:left;
+	margin:0 5px 0 5px;
+	border-bottom:1px solid black;
+	border-right:1px solid black;
+	clear:both;
+	width:260px;
+	height:156px;
+}
+.mlColor{
+	border-left:1px solid black;
+	border-top:1px solid black;
+	float:left;
+	width:12px;
+	height:12px;
 }
 
 /***************************************
@@ -711,7 +694,11 @@ jquery.autocomplete.css
 	height:100%;
 	width:0;
 }
-.songlist .hardware {z-index:0;background:#f2f2f2;}
+.songlist .hardware {
+	z-index:0;
+	background:#f2f2f2;
+	-webkit-transition:width 0.5s ease-in;
+}
 .songlist .playbar {z-index:1;background:#ddd;}
 .songlist .playing .hardware,
 .songlist .playing .playbar {display:block;}
