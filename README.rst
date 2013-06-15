@@ -1,6 +1,20 @@
 ==========
  Tinytape 
 ==========
+
+---------
+ Notice!
+---------
+
+Tinytape is currently defunct. I let the tinytape.com domain lapse, but still
+own tinyta.pe. The site will not return as a PHP application.
+
+If I ever bring Tinytape back, it will be rewritten in Python or Go and use
+Redis as its exclusive data store.
+
+All API tokens and secrets included in the repo have been deactivated, and the
+database no longer exists.
+
 ------
  v4.0 
 ------
