@@ -1,10 +1,8 @@
-==========
- Tinytape 
-==========
+# Tinytape
 
----------
- Notice!
----------
+![Screenshot](https://raw.githubusercontent.com/mattbasta/Tinytape/master/screenshot.jpg)
+
+## Notice!
 
 Tinytape is currently defunct. I let the tinytape.com domain lapse, but still
 own tinyta.pe. The site will not return as a PHP application.
@@ -15,28 +13,26 @@ Redis as its exclusive data store.
 All API tokens and secrets included in the repo have been deactivated, and the
 database no longer exists.
 
-------
- v4.0 
-------
+## v4.0
 
 To install Tinytape to a server, it must already be running a copy of
 Interchange that's properly configured. This repository should then be overlaid
 up on the Interchange root (the directory specified by `IXG_PATH_PREFIX`).
 
-Setting up the DBs
-==================
+
+### Setting up the DBs
 
 This is some good times.
 
-#. Open `libraries/prefixes.php`
-#. Modify the Cloud database instantiation to match your MySQL information
-#. Open `libraries/redis.php`
-#. Modify the PHPRedis client initialization to match your Redis configuration
-#. Open `libraries/sphinx.php`
-#. Modify the Sphinx client initialization to match your Sphinx configuration
+1. Open `libraries/prefixes.php`
+2. Modify the Cloud database instantiation to match your MySQL information
+3. Open `libraries/redis.php`
+4. Modify the PHPRedis client initialization to match your Redis configuration
+5. Open `libraries/sphinx.php`
+6. Modify the Sphinx client initialization to match your Sphinx configuration
 
-MySQL
------
+
+#### MySQL
 
 To set up your MySQL instance, simply set up a new database (call it `tinytape`
 for the sake of simplicity). Then, run `setup/tinytape.sql` to create the
@@ -47,8 +43,8 @@ priviliges, so sign up for an account and then manually promote the user to
 admin status by changing the `admin` column for their record to `1`. Log out
 and log back in for the changes to take effect.
 
-Redis
------
+
+#### Redis
 
 So if you've ever used Redis before, you know that it can be pretty finnicky
 when it comes to not faceplanting. Memory is a huge issue: too little memory or
@@ -62,14 +58,13 @@ push it to S3 for backup.
 Otherwise, any old Redis installation will do. Tinytape expects a password (the
 `auth` command), and the password should be stored at `/var/auth/redis`.
 
-Sphinx
-------
+
+#### Sphinx
 
 Set up Sphinx to index MySQL. Beyond loading in a config file, there's really
 no other configuration necessary.
 
-Database-side
-~~~~~~~~~~~~~
+##### Database-side
 
 On Debian, Sphinx requires the "libmysqlclient15-dev" package to be installed.
 On other platforms, this may be called "mysql-devel".
@@ -77,9 +72,9 @@ On other platforms, this may be called "mysql-devel".
 To perform the Sphinx indexing operation, a cron job should be created. A good
 default would be something like this:
 
-::
-
-	*   *   *   *   *   /usr/local/sphinx/bin/indexer --quiet --config /usr/local/sphinx/etc/sphinx.conf --rotate tinytape1
+```
+*   *   *   *   *   /usr/local/sphinx/bin/indexer --quiet --config /usr/local/sphinx/etc/sphinx.conf --rotate tinytape1
+```
 
 A sample configuration file can be found in `setup/sphinx.conf` and should be
 reviewed and placed in `/usr/local/sphinx/etc/`. A data directory for the
@@ -89,14 +84,12 @@ Sphinx's searchd daemon needs to be running for search to work. To create the
 most basic kind of init.d script, simply save the following to
 `/etc/init.d/sphinx` (don't forget to `chmod +x /etc/init.d/sphinx`):
 
-::
+```bash
+cd /usr/local/sphinx/etc
+/usr/local/sphinx/bin/searchd
+```
 
-	cd /usr/local/sphinx/etc
-	/usr/local/sphinx/bin/searchd
-
-
-Web-server side
-~~~~~~~~~~~~~~~
+##### Web-server side
 
 libsphinxclient must be installed on the web server before the PECL sphinx
 package can be installed. This is bundled in the Sphinx tarball under
@@ -104,18 +97,18 @@ package can be installed. This is bundled in the Sphinx tarball under
 `sphinxclient.c` may be required.
 
 
-Prerequirements
-===============
+## Prerequirements
 
-Twitter
--------
+### Twitter
 
 To enable Twitter support, you need to have PCRE installed: ::
 
-    apt-get install libpcre3-dev
+```bash
+apt-get install libpcre3-dev
+```
 
-PECL
-----
+
+### PECL
 
 There are a bunch of PECL extensions you should have:
 
